@@ -8,35 +8,42 @@ import (
 )
 
 func Commander() func(s *dg.Session, m *dg.MessageCreate) {
+	commandRegex := regexp.MustCompile(`![a-zA-Z]+[ a-zA-Z\"\.]*[ 0-9/]*`)
+	pingRegex := regexp.MustCompile(`!ping`)
+	stockRegex := regexp.MustCompile(`(?i)^!stock [a-zA-Z\.]+$`)
+	erRegex := regexp.MustCompile(`(?i)^!er [a-zA-Z]+$`)
+	wizdaddyRegex := regexp.MustCompile(`(?i)^!wizdaddy$`)
+	coinRegex := regexp.MustCompile(`(?i)^!coin [a-zA-Z]+$`)
+
 	return func(s *dg.Session, m *dg.MessageCreate) {
-		if match, _ := regexp.MatchString("![a-zA-Z]+[ a-zA-Z\"]*[ 0-9/]*", m.Content); match {
+		if commandRegex.MatchString(m.Content) {
 			// Ignore all messages created by the bot itself
 			// This isn't required in this specific example but it's a good practice.
 			if m.Author.ID == s.State.User.ID {
 				return
 			}
 
-			if match, _ := regexp.MatchString("!ping", m.Content); match {
+			if pingRegex.MatchString(m.Content) {
 				Ping(s, m)
 				return
 			}
 
-			if match, _ := regexp.MatchString("(?i)^!stock [a-zA-Z]+$", m.Content); match {
+			if stockRegex.MatchString(m.Content) {
 				Stock(s, m)
 				return
 			}
 
-			if match, _ := regexp.MatchString("(?i)^!er [a-zA-Z]+$", m.Content); match {
+			if erRegex.MatchString(m.Content) {
 				Er(s, m)
 				return
 			}
 
-			if match, _ := regexp.MatchString("(?i)^!wizdaddy$", m.Content); match {
+			if wizdaddyRegex.MatchString(m.Content) {
 				Wizdaddy(s, m)
 				return
 			}
 
-			if match, _ := regexp.MatchString("(?i)^!coin [a-zA-Z]+$", m.Content); match {
+			if coinRegex.MatchString(m.Content) {
 				Coin(s, m)
 				return
 			}
