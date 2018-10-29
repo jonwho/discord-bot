@@ -10,13 +10,19 @@ import (
 )
 
 func Er(s *dg.Session, m *dg.MessageCreate) {
+	logger := util.Logger{Session: s, ChannelID: config.GetConfig().BotLogChannelID}
 	slice := strings.Split(m.Content, " ")
 	ticker := slice[1]
-	iexClient := iex.NewClient()
-	earnings, err := iexClient.Earnings(ticker)
-	logger := util.Logger{Session: s, ChannelID: config.GetConfig().BotLogChannelID}
+	iexClient, err := iex.NewClient()
+	if err != nil {
+		logger.Trace("IEX client initialization failed. Message: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
 
 	logger.Info("Fetching earnings report info for " + ticker)
+	earnings, err := iexClient.Earnings(ticker)
+
 	if err != nil {
 		logger.Trace("IEX request failed. Message: " + err.Error())
 		s.ChannelMessageSend(m.ChannelID, err.Error())
