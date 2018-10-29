@@ -11,6 +11,7 @@ type BotConfig struct {
 	WizdaddyURL           string
 	InvalidCommandMessage string
 	BotLogChannelID       string
+	Maintainers           string
 }
 
 var (

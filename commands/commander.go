@@ -68,6 +68,7 @@ func safelyDo(fn work, s *dg.Session, m *dg.MessageCreate, logger util.Logger) {
 	defer func() {
 		// use recover to catch panic so bot doesn't shutdown
 		if err := recover(); err != nil {
+			logger.Send(util.MentionMaintainers() + " an error has occurred")
 			logger.Warn(fmt.Sprintln("function", util.FuncName(fn), "failed:", err))
 		}
 	}()
