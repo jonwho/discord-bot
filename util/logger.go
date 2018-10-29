@@ -51,3 +51,7 @@ func (l *Logger) Warn(s string) {
 
 	l.Session.ChannelMessageSend(l.ChannelID, fmtStr)
 }
+
+func (l *Logger) Send(s string) {
+	l.Session.ChannelMessageSend(l.ChannelID, s)
+}
