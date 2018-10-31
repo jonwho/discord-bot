@@ -139,5 +139,5 @@ func FormatFuzzySymbols(symbols []iex.SymbolDTO) string {
 func outsideNormalTradingHours() bool {
 	now := time.Now().In(pst)
 
-	return now.Hour() > 13 || (now.Hour() < 6 && now.Minute() < 30)
+	return now.Hour() >= 13 || (now.Hour() <= 6 && now.Minute() <= 30)
 }
