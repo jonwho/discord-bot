@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	iex "github.com/jonwho/go-iex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+)
+
+var (
+	pst, _ = time.LoadLocation("America/Los_Angeles")
 )
 
 func FormatQuote(quote *iex.Quote) string {
@@ -24,16 +29,30 @@ func FormatQuote(quote *iex.Quote) string {
 		"Volume",
 	}
 
+	var current float32
+	var changePercent float32
+	var delta float32
+
+	if outsideNormalTradingHours() {
+		current = quote.ExtendedPrice
+		changePercent = quote.ExtendedChangePercent
+		delta = current - quote.Close
+	} else {
+		current = quote.LatestPrice
+		changePercent = quote.ChangePercent
+		delta = current - quote.Close
+	}
+
 	outputMap := map[string]string{
 		"Symbol":           quote.Symbol,
 		"Company Name":     quote.CompanyName,
-		"Current":          fmt.Sprintf("%#v", quote.LatestPrice),
+		"Current":          fmt.Sprintf("%#v", current),
 		"High":             fmt.Sprintf("%#v", quote.High),
 		"Low":              fmt.Sprintf("%#v", quote.Low),
 		"Open":             fmt.Sprintf("%#v", quote.Open),
 		"Close":            fmt.Sprintf("%#v", quote.Close),
-		"Change % (1 day)": fmt.Sprintf("%#v", quote.ChangePercent) + " %",
-		"Delta":            fmt.Sprintf("%#v", Round(float64(quote.LatestPrice-quote.Close))),
+		"Change % (1 day)": fmt.Sprintf("%#v", changePercent) + " %",
+		"Delta":            fmt.Sprintf("%#v", Round(float64(delta))),
 		"Volume":           fmt.Sprintf("%#v", quote.LatestVolume),
 	}
 
@@ -115,4 +134,10 @@ func FormatFuzzySymbols(symbols []iex.SymbolDTO) string {
 	fmtStr += "```\n"
 
 	return fmtStr
+}
+
+func outsideNormalTradingHours() bool {
+	now := time.Now().In(pst)
+
+	return now.Hour() > 13 || (now.Hour() < 6 && now.Minute() < 30)
 }
