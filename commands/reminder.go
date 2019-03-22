@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -11,40 +10,17 @@ import (
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
 	"github.com/go-redis/redis"
-	"github.com/robfig/cron"
 )
+
+func init() {
+	// Run once at 6:00 AM from Monday-Friday
+	cronner.AddFunc("0 6 * * 1-5", todaysReminders)
+}
 
 /*
  * Set up redis table in a way where the keys are the dates of when to pull a reminder
  * and the value is an array of events that need to be reminded on that date
  */
-
-const (
-	dateFormat      string = "1/_2/06"
-	redisDateFormat string = "01/02/06"
-)
-
-var (
-	token       string
-	redisClient *redis.Client
-	cronner     *cron.Cron
-	pst, _      = time.LoadLocation("America/Los_Angeles")
-)
-
-func init() {
-	token = os.Getenv("BOT_TOKEN")
-
-	redisClient = redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
-		Password: "",
-		DB:       0,
-	})
-
-	cronner = cron.New()
-	cronner.Start()
-	// Run once at 6:00 AM from Monday-Friday
-	cronner.AddFunc("0 6 * * 1-5", todaysReminders)
-}
 
 // Remindme creates a reminder entry into datastore (Redis)
 func Remindme(s *dg.Session, m *dg.MessageCreate) {
