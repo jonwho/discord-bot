@@ -27,6 +27,7 @@ func FormatQuote(quote *iex.Quote) string {
 		"Change % (1 day)",
 		"Delta",
 		"Volume",
+		"PE Ratio",
 	}
 
 	var current float32
@@ -54,6 +55,7 @@ func FormatQuote(quote *iex.Quote) string {
 		"Change % (1 day)": fmt.Sprintf("%#v", changePercent) + " %",
 		"Delta":            fmt.Sprintf("%#v", Round(float64(delta))),
 		"Volume":           fmt.Sprintf("%#v", quote.LatestVolume),
+		"PE Ratio":         fmt.Sprintf("%#v", quote.PeRatio),
 	}
 
 	printer := message.NewPrinter(language.English)
