@@ -2,24 +2,55 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"regexp"
+	"time"
 
 	"github.com/BryanSLam/discord-bot/config"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
+	"github.com/go-redis/redis"
+	"github.com/robfig/cron"
+)
+
+const (
+	dateFormat        string = "1/_2/06"
+	redisDateFormat   string = "01/02/06"
+	watchlistRedisKey string = "watchlist"
 )
 
 type work func(s *dg.Session, m *dg.MessageCreate)
 
-func Commander() func(s *dg.Session, m *dg.MessageCreate) {
-	commandRegex := regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*`)
-	pingRegex := regexp.MustCompile(`!ping`)
-	stockRegex := regexp.MustCompile(`(?i)^!stock [\w.]+$`)
-	erRegex := regexp.MustCompile(`(?i)^!er [\w.]+$`)
-	wizdaddyRegex := regexp.MustCompile(`(?i)^!wizdaddy$`)
-	coinRegex := regexp.MustCompile(`(?i)^!coin [\w]+$`)
-	remindmeRegex := regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`)
+var (
+	token               string
+	redisClient         *redis.Client
+	cronner             *cron.Cron
+	pst, _              = time.LoadLocation("America/Los_Angeles")
+	commandRegex        = regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*$`)
+	pingRegex           = regexp.MustCompile(`(?i)^!ping$`)
+	stockRegex          = regexp.MustCompile(`(?i)^!stock [\w.]+$`)
+	erRegex             = regexp.MustCompile(`(?i)^!er [\w.]+$`)
+	wizdaddyRegex       = regexp.MustCompile(`(?i)^!wizdaddy$`)
+	coinRegex           = regexp.MustCompile(`(?i)^!coin [\w]+$`)
+	remindmeRegex       = regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`)
+	watchlistRegex      = regexp.MustCompile(`(?i)^!watchlist [\w ]+$`)
+	clearwatchlistRegex = regexp.MustCompile(`(?i)^!clearwatchlist$`)
+)
 
+func init() {
+	token = os.Getenv("BOT_TOKEN")
+
+	redisClient = redis.NewClient(&redis.Options{
+		Addr:     "redis:6379",
+		Password: "",
+		DB:       0,
+	})
+
+	cronner = cron.New()
+	cronner.Start()
+}
+
+func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 	return func(s *dg.Session, m *dg.MessageCreate) {
 		// TODO: refactor logger
 		// OPTIONS:
@@ -61,6 +92,16 @@ func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 
 			if remindmeRegex.MatchString(m.Content) {
 				go safelyDo(Remindme, s, m, logger)
+				return
+			}
+
+			if watchlistRegex.MatchString(m.Content) {
+				go safelyDo(Watchlist, s, m, logger)
+				return
+			}
+
+			if clearwatchlistRegex.MatchString(m.Content) {
+				go safelyDo(ClearWatchlist, s, m, logger)
 				return
 			}
 
