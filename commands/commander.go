@@ -12,12 +12,13 @@ import (
 type work func(s *dg.Session, m *dg.MessageCreate)
 
 func Commander() func(s *dg.Session, m *dg.MessageCreate) {
-	commandRegex := regexp.MustCompile(`![a-zA-Z]+[ a-zA-Z\"\.]*[ 0-9/]*`)
+	commandRegex := regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*`)
 	pingRegex := regexp.MustCompile(`!ping`)
-	stockRegex := regexp.MustCompile(`(?i)^!stock [a-zA-Z\.]+$`)
-	erRegex := regexp.MustCompile(`(?i)^!er [a-zA-Z]+$`)
+	stockRegex := regexp.MustCompile(`(?i)^!stock [\w.]+$`)
+	erRegex := regexp.MustCompile(`(?i)^!er [\w.]+$`)
 	wizdaddyRegex := regexp.MustCompile(`(?i)^!wizdaddy$`)
-	coinRegex := regexp.MustCompile(`(?i)^!coin [a-zA-Z]+$`)
+	coinRegex := regexp.MustCompile(`(?i)^!coin [\w]+$`)
+	remindmeRegex := regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`)
 
 	return func(s *dg.Session, m *dg.MessageCreate) {
 		// TODO: refactor logger
@@ -55,6 +56,11 @@ func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 
 			if coinRegex.MatchString(m.Content) {
 				go safelyDo(Coin, s, m, logger)
+				return
+			}
+
+			if remindmeRegex.MatchString(m.Content) {
+				go safelyDo(Remindme, s, m, logger)
 				return
 			}
 
