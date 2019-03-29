@@ -35,6 +35,7 @@ var (
 	remindmeRegex       = regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`)
 	watchlistRegex      = regexp.MustCompile(`(?i)^!watchlist [\w ]+$`)
 	clearwatchlistRegex = regexp.MustCompile(`(?i)^!clearwatchlist$`)
+	newsRegex           = regexp.MustCompile(`(?i)^!news [\w.]+$`)
 )
 
 func init() {
@@ -102,6 +103,11 @@ func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 
 			if clearwatchlistRegex.MatchString(m.Content) {
 				go safelyDo(ClearWatchlist, s, m, logger)
+				return
+			}
+
+			if newsRegex.MatchString(m.Content) {
+				go safelyDo(News, s, m, logger)
 				return
 			}
 

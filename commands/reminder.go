@@ -14,7 +14,7 @@ import (
 
 func init() {
 	// Run once at 6:00 AM from Monday-Friday
-	cronner.AddFunc("0 6 * * 1-5", todaysReminders)
+	cronner.AddFunc("0 0 6 * * MON-FRI", todaysReminders)
 }
 
 /*
@@ -71,11 +71,11 @@ func getReminders(date string) ([]string, error) {
 // Function run during the daily reminder check
 func todaysReminders() {
 	dgSession, _ := dg.New("Bot " + token)
-	defer dgSession.Close()
 
 	todaysDate := time.Now().In(pst).Format(redisDateFormat)
 	reminders, _ := getReminders(todaysDate)
 	dgSession.Open()
+	defer dgSession.Close()
 
 	for _, reminder := range reminders {
 		split := strings.Split(reminder, "~*")

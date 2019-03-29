@@ -12,7 +12,7 @@ import (
 
 func init() {
 	// Run on 15 minute interval between hours 6-13 from Monday-Friday
-	cronner.AddFunc("*/15 6-13 * * 1-5", watchlistCron)
+	cronner.AddFunc("0 0/15 6-13 * * MON-FRI", watchlistCron)
 }
 
 // Watchlist tickers to report on on an interval
@@ -54,6 +54,7 @@ func ClearWatchlist(s *dg.Session, m *dg.MessageCreate) {
 func watchlistCron() {
 	dgSession, _ := dg.New("Bot " + token)
 	dgSession.Open()
+	defer dgSession.Close()
 
 	tickers := redisClient.SMembers(watchlistRedisKey).Val()
 
@@ -67,6 +68,4 @@ func watchlistCron() {
 			dgSession.ChannelMessageSend(channel, message)
 		}
 	}
-
-	defer dgSession.Close()
 }
