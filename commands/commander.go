@@ -47,7 +47,7 @@ func init() {
 		DB:       0,
 	})
 
-	cronner = cron.New()
+	cronner = cron.NewWithLocation(pst)
 	cronner.Start()
 }
 
