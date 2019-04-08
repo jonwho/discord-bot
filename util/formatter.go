@@ -15,6 +15,13 @@ var (
 	pst, _ = time.LoadLocation("America/Los_Angeles")
 )
 
+func FormatNews(news *iex.NewsDTO) string {
+	fmtStr := news.Headline + "\n"
+	fmtStr += news.URL + "\n"
+
+	return fmtStr
+}
+
 func FormatQuote(quote *iex.Quote) string {
 	stringOrder := []string{
 		"Symbol",
