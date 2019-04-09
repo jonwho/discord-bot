@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/BryanSLam/discord-bot/config"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
 	iex "github.com/jonwho/go-iex"
@@ -17,7 +16,7 @@ func init() {
 
 // Watchlist tickers to report on on an interval
 func Watchlist(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: config.GetConfig().BotLogChannelID}
+	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 
 	trimmed := strings.TrimSpace(m.Content)
 	slice := strings.Split(trimmed, " ")

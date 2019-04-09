@@ -12,6 +12,7 @@ type BotConfig struct {
 	InvalidCommandMessage string
 	BotLogChannelID       string
 	Maintainers           string
+	EarningsWhisperURL    string
 }
 
 var (

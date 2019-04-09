@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BryanSLam/discord-bot/config"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
 	"github.com/go-redis/redis"
@@ -24,7 +23,7 @@ func init() {
 
 // Remindme creates a reminder entry into datastore (Redis)
 func Remindme(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: config.GetConfig().BotLogChannelID}
+	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 
 	slice := strings.Split(m.Content, " ")
 	date := slice[len(slice)-1]

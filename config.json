@@ -3,5 +3,6 @@
   "WizdaddyURL": "http://dev.wizdaddy.io/api/giveItToMeDaddy",
   "InvalidCommandMessage": "Invalid Command",
   "BotLogChannelID": "493921138657722368",
-  "Maintainers": "137502839613292544,137732496665214976"
+  "Maintainers": "137502839613292544,137732496665214976",
+  "EarningsWhisperURL": "https://www.earningswhispers.com/calendar?sb=p&t=all"
 }

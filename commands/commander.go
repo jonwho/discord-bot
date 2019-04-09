@@ -22,10 +22,13 @@ const (
 type work func(s *dg.Session, m *dg.MessageCreate)
 
 var (
-	token               string
-	redisClient         *redis.Client
-	cronner             *cron.Cron
-	pst, _              = time.LoadLocation("America/Los_Angeles")
+	token       string
+	redisClient *redis.Client
+	cronner     *cron.Cron
+	pst, _      = time.LoadLocation("America/Los_Angeles")
+)
+
+var (
 	commandRegex        = regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*$`)
 	pingRegex           = regexp.MustCompile(`(?i)^!ping$`)
 	stockRegex          = regexp.MustCompile(`(?i)^!stock [\w.]+$`)
@@ -36,6 +39,15 @@ var (
 	watchlistRegex      = regexp.MustCompile(`(?i)^!watchlist [\w ]+$`)
 	clearwatchlistRegex = regexp.MustCompile(`(?i)^!clearwatchlist$`)
 	newsRegex           = regexp.MustCompile(`(?i)^!news [\w.]+$`)
+	nexterRegex         = regexp.MustCompile(`(?i)^!nexter(\s[1-9]\d*)?$`)
+)
+
+var (
+	coinAPIURL            = config.GetConfig().CoinAPIURL
+	wizdaddyURL           = config.GetConfig().WizdaddyURL
+	invalidCommandMessage = config.GetConfig().InvalidCommandMessage
+	botLogChannelID       = config.GetConfig().BotLogChannelID
+	earningsWhisperURL    = config.GetConfig().EarningsWhisperURL
 )
 
 func init() {
@@ -53,11 +65,6 @@ func init() {
 
 func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 	return func(s *dg.Session, m *dg.MessageCreate) {
-		// TODO: refactor logger
-		// OPTIONS:
-		// 1. global logger
-		// 2. check if pkg log supports write streams and if dg has stream to pass
-		logger := util.Logger{Session: s, ChannelID: config.GetConfig().BotLogChannelID}
 
 		if commandRegex.MatchString(m.Content) {
 			// Ignore all messages created by the bot itself
@@ -67,56 +74,63 @@ func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 			}
 
 			if pingRegex.MatchString(m.Content) {
-				go safelyDo(Ping, s, m, logger)
+				go safelyDo(Ping, s, m)
 				return
 			}
 
 			if stockRegex.MatchString(m.Content) {
-				go safelyDo(Stock, s, m, logger)
+				go safelyDo(Stock, s, m)
 				return
 			}
 
 			if erRegex.MatchString(m.Content) {
-				go safelyDo(Er, s, m, logger)
+				go safelyDo(Er, s, m)
 				return
 			}
 
 			if wizdaddyRegex.MatchString(m.Content) {
-				go safelyDo(Wizdaddy, s, m, logger)
+				go safelyDo(Wizdaddy, s, m)
 				return
 			}
 
 			if coinRegex.MatchString(m.Content) {
-				go safelyDo(Coin, s, m, logger)
+				go safelyDo(Coin, s, m)
 				return
 			}
 
 			if remindmeRegex.MatchString(m.Content) {
-				go safelyDo(Remindme, s, m, logger)
+				go safelyDo(Remindme, s, m)
 				return
 			}
 
 			if watchlistRegex.MatchString(m.Content) {
-				go safelyDo(Watchlist, s, m, logger)
+				go safelyDo(Watchlist, s, m)
 				return
 			}
 
 			if clearwatchlistRegex.MatchString(m.Content) {
-				go safelyDo(ClearWatchlist, s, m, logger)
+				go safelyDo(ClearWatchlist, s, m)
 				return
 			}
 
 			if newsRegex.MatchString(m.Content) {
-				go safelyDo(News, s, m, logger)
+				go safelyDo(News, s, m)
 				return
 			}
 
-			s.ChannelMessageSend(m.ChannelID, config.GetConfig().InvalidCommandMessage)
+			if nexterRegex.MatchString(m.Content) {
+				go safelyDo(NextEr, s, m)
+				return
+			}
+
+			s.ChannelMessageSend(m.ChannelID, invalidCommandMessage)
 		}
 	}
 }
 
-func safelyDo(fn work, s *dg.Session, m *dg.MessageCreate, logger util.Logger) {
+func safelyDo(fn work, s *dg.Session, m *dg.MessageCreate) {
+	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
+
 	// defer'd funcs will execute before return even if runtime panic
 	defer func() {
 		// use recover to catch panic so bot doesn't shutdown

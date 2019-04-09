@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/BryanSLam/discord-bot/config"
 	"github.com/BryanSLam/discord-bot/datasource"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
 )
 
 func Wizdaddy(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: config.GetConfig().BotLogChannelID}
-	resp, err := http.Get(config.GetConfig().WizdaddyURL)
+	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
+	resp, err := http.Get(wizdaddyURL)
 
 	if err != nil {
 		logger.Trace("Wizdaddy request failed. Message: " + err.Error())

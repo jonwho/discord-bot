@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/BryanSLam/discord-bot/config"
 	"github.com/BryanSLam/discord-bot/datasource"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
@@ -14,8 +13,8 @@ import (
 func Coin(s *dg.Session, m *dg.MessageCreate) {
 	slice := strings.Split(m.Content, " ")
 	ticker := strings.ToUpper(slice[1])
-	coinURL := config.GetConfig().CoinAPIURL + ticker + "&tsyms=USD"
-	logger := util.Logger{Session: s, ChannelID: config.GetConfig().BotLogChannelID}
+	coinURL := coinAPIURL + ticker + "&tsyms=USD"
+	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 
 	logger.Info("Fetching coin info for: " + ticker)
 	resp, err := http.Get(coinURL)

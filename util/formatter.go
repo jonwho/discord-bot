@@ -150,3 +150,21 @@ func outsideNormalTradingHours() bool {
 
 	return now.Hour() >= 13 || (now.Hour() <= 6 && now.Minute() <= 30)
 }
+
+func FormatUpcomingErs(ers []struct {
+	Ticker  string
+	Company string
+	EPS     string
+	REV     string
+}) string {
+	fmtStr := "```\n"
+
+	for _, er := range ers {
+		fmtStr += fmt.Sprintf("Ticker: %s\nCompany: %s\nEstimated EPS: %s\nEstimated REV: %s\n",
+			er.Ticker, er.Company, er.EPS, er.REV)
+	}
+
+	fmtStr += "```\n"
+
+	return fmtStr
+}
