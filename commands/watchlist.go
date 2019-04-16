@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
@@ -9,13 +10,25 @@ import (
 	iex "github.com/jonwho/go-iex"
 )
 
+type watchlistCommand struct {
+	regex *regexp.Regexp
+}
+
 func init() {
 	// Run on 15 minute interval between hours 6-13 from Monday-Friday
 	cronner.AddFunc("0 0/15 6-13 * * MON-FRI", watchlistCron)
 }
 
+func newWatchlistCommand() watchlistCommand {
+	return watchlistCommand{regexp.MustCompile(`(?i)^!watchlist [\w ]+$`)}
+}
+
+func (cmd watchlistCommand) match(s string) bool {
+	return cmd.regex.MatchString(s)
+}
+
 // Watchlist tickers to report on on an interval
-func Watchlist(s *dg.Session, m *dg.MessageCreate) {
+func (cmd watchlistCommand) fn(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 
 	trimmed := strings.TrimSpace(m.Content)

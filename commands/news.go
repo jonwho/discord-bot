@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
@@ -9,7 +10,19 @@ import (
 	iex "github.com/jonwho/go-iex"
 )
 
-func News(s *dg.Session, m *dg.MessageCreate) {
+type newsCommand struct {
+	regex *regexp.Regexp
+}
+
+func newNewsCommand() newsCommand {
+	return newsCommand{regexp.MustCompile(`(?i)^!news [\w.]+$`)}
+}
+
+func (cmd newsCommand) match(s string) bool {
+	return cmd.regex.MatchString(s)
+}
+
+func (cmd newsCommand) fn(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 	slice := strings.Split(m.Content, " ")
 	ticker := slice[1]

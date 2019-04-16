@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,7 +12,19 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func NextEr(s *dg.Session, m *dg.MessageCreate) {
+type nexterCommand struct {
+	regex *regexp.Regexp
+}
+
+func newNextErCommand() nexterCommand {
+	return nexterCommand{regexp.MustCompile(`(?i)^!nexter(\s[1-9]\d*)?$`)}
+}
+
+func (cmd nexterCommand) match(s string) bool {
+	return cmd.regex.MatchString(s)
+}
+
+func (cmd nexterCommand) fn(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 	logger.Info("nexter test")
 	slice := strings.Split(m.Content, " ")

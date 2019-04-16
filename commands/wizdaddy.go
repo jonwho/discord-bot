@@ -4,13 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/BryanSLam/discord-bot/datasource"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
 )
 
-func Wizdaddy(s *dg.Session, m *dg.MessageCreate) {
+type wizdaddyCommand struct {
+	regex *regexp.Regexp
+}
+
+func newWizdaddyCommand() wizdaddyCommand {
+	return wizdaddyCommand{regexp.MustCompile(`(?i)^!wizdaddy$`)}
+}
+
+func (cmd wizdaddyCommand) match(s string) bool {
+	return cmd.regex.MatchString(s)
+}
+
+func (cmd wizdaddyCommand) fn(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 	resp, err := http.Get(wizdaddyURL)
 

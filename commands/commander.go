@@ -22,24 +22,11 @@ const (
 type work func(s *dg.Session, m *dg.MessageCreate)
 
 var (
-	token       string
-	redisClient *redis.Client
-	cronner     *cron.Cron
-	pst, _      = time.LoadLocation("America/Los_Angeles")
-)
-
-var (
-	commandRegex        = regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*$`)
-	pingRegex           = regexp.MustCompile(`(?i)^!ping$`)
-	stockRegex          = regexp.MustCompile(`(?i)^!stock [\w.]+$`)
-	erRegex             = regexp.MustCompile(`(?i)^!er [\w.]+$`)
-	wizdaddyRegex       = regexp.MustCompile(`(?i)^!wizdaddy$`)
-	coinRegex           = regexp.MustCompile(`(?i)^!coin [\w]+$`)
-	remindmeRegex       = regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`)
-	watchlistRegex      = regexp.MustCompile(`(?i)^!watchlist [\w ]+$`)
-	clearwatchlistRegex = regexp.MustCompile(`(?i)^!clearwatchlist$`)
-	newsRegex           = regexp.MustCompile(`(?i)^!news [\w.]+$`)
-	nexterRegex         = regexp.MustCompile(`(?i)^!nexter(\s[1-9]\d*)?$`)
+	token        string
+	redisClient  *redis.Client
+	cronner      *cron.Cron
+	pst, _       = time.LoadLocation("America/Los_Angeles")
+	commandRegex = regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*$`)
 )
 
 var (
@@ -48,6 +35,19 @@ var (
 	invalidCommandMessage = config.GetConfig().InvalidCommandMessage
 	botLogChannelID       = config.GetConfig().BotLogChannelID
 	earningsWhisperURL    = config.GetConfig().EarningsWhisperURL
+)
+
+var (
+	ping           = newPingCommand()
+	stock          = newStockCommand()
+	er             = newErCommand()
+	wizdaddy       = newWizdaddyCommand()
+	coin           = newCoinCommand()
+	remindme       = newRemindmeCommand()
+	watchlist      = newWatchlistCommand()
+	clearwatchlist = newClearWatchlistCommand()
+	news           = newNewsCommand()
+	nexter         = newNextErCommand()
 )
 
 func init() {
@@ -73,53 +73,53 @@ func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 				return
 			}
 
-			if pingRegex.MatchString(m.Content) {
-				go safelyDo(Ping, s, m)
+			if ping.match(m.Content) {
+				go safelyDo(ping.fn, s, m)
 				return
 			}
 
-			if stockRegex.MatchString(m.Content) {
-				go safelyDo(Stock, s, m)
+			if stock.match(m.Content) {
+				go safelyDo(stock.fn, s, m)
 				return
 			}
 
-			if erRegex.MatchString(m.Content) {
-				go safelyDo(Er, s, m)
+			if er.match(m.Content) {
+				go safelyDo(er.fn, s, m)
 				return
 			}
 
-			if wizdaddyRegex.MatchString(m.Content) {
-				go safelyDo(Wizdaddy, s, m)
+			if wizdaddy.match(m.Content) {
+				go safelyDo(wizdaddy.fn, s, m)
 				return
 			}
 
-			if coinRegex.MatchString(m.Content) {
-				go safelyDo(Coin, s, m)
+			if coin.match(m.Content) {
+				go safelyDo(coin.fn, s, m)
 				return
 			}
 
-			if remindmeRegex.MatchString(m.Content) {
-				go safelyDo(Remindme, s, m)
+			if remindme.match(m.Content) {
+				go safelyDo(remindme.fn, s, m)
 				return
 			}
 
-			if watchlistRegex.MatchString(m.Content) {
-				go safelyDo(Watchlist, s, m)
+			if watchlist.match(m.Content) {
+				go safelyDo(watchlist.fn, s, m)
 				return
 			}
 
-			if clearwatchlistRegex.MatchString(m.Content) {
-				go safelyDo(ClearWatchlist, s, m)
+			if clearwatchlist.match(m.Content) {
+				go safelyDo(clearwatchlist.fn, s, m)
 				return
 			}
 
-			if newsRegex.MatchString(m.Content) {
-				go safelyDo(News, s, m)
+			if news.match(m.Content) {
+				go safelyDo(news.fn, s, m)
 				return
 			}
 
-			if nexterRegex.MatchString(m.Content) {
-				go safelyDo(NextEr, s, m)
+			if nexter.match(m.Content) {
+				go safelyDo(nexter.fn, s, m)
 				return
 			}
 
