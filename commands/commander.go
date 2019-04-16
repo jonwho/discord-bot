@@ -27,6 +27,7 @@ var (
 	cronner      *cron.Cron
 	pst, _       = time.LoadLocation("America/Los_Angeles")
 	commandRegex = regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*$`)
+	commands     []command
 )
 
 var (
@@ -61,6 +62,9 @@ func init() {
 
 	cronner = cron.NewWithLocation(pst)
 	cronner.Start()
+
+	commands = append(commands, ping, stock, er, wizdaddy, coin, remindme, watchlist, clearwatchlist,
+		news, nexter)
 }
 
 func Commander() func(s *dg.Session, m *dg.MessageCreate) {
@@ -73,54 +77,11 @@ func Commander() func(s *dg.Session, m *dg.MessageCreate) {
 				return
 			}
 
-			if ping.match(m.Content) {
-				go safelyDo(ping.fn, s, m)
-				return
-			}
-
-			if stock.match(m.Content) {
-				go safelyDo(stock.fn, s, m)
-				return
-			}
-
-			if er.match(m.Content) {
-				go safelyDo(er.fn, s, m)
-				return
-			}
-
-			if wizdaddy.match(m.Content) {
-				go safelyDo(wizdaddy.fn, s, m)
-				return
-			}
-
-			if coin.match(m.Content) {
-				go safelyDo(coin.fn, s, m)
-				return
-			}
-
-			if remindme.match(m.Content) {
-				go safelyDo(remindme.fn, s, m)
-				return
-			}
-
-			if watchlist.match(m.Content) {
-				go safelyDo(watchlist.fn, s, m)
-				return
-			}
-
-			if clearwatchlist.match(m.Content) {
-				go safelyDo(clearwatchlist.fn, s, m)
-				return
-			}
-
-			if news.match(m.Content) {
-				go safelyDo(news.fn, s, m)
-				return
-			}
-
-			if nexter.match(m.Content) {
-				go safelyDo(nexter.fn, s, m)
-				return
+			for _, cmd := range commands {
+				if cmd.match(m.Content) {
+					go safelyDo(cmd.fn, s, m)
+					return
+				}
 			}
 
 			s.ChannelMessageSend(m.ChannelID, invalidCommandMessage)
