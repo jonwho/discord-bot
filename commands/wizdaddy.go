@@ -11,19 +11,16 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-type wizdaddyCommand struct {
-	regex *regexp.Regexp
+func newWizdaddyCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!wizdaddy$`).MatchString(s)
+		},
+		fn: wizdaddy,
+	}
 }
 
-func newWizdaddyCommand() wizdaddyCommand {
-	return wizdaddyCommand{regexp.MustCompile(`(?i)^!wizdaddy$`)}
-}
-
-func (cmd wizdaddyCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
-}
-
-func (cmd wizdaddyCommand) fn(s *dg.Session, m *dg.MessageCreate) {
+func wizdaddy(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 	resp, err := http.Get(wizdaddyURL)
 

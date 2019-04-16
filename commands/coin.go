@@ -11,19 +11,16 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-type coinCommand struct {
-	regex *regexp.Regexp
+func newCoinCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!coin [\w]+$`).MatchString(s)
+		},
+		fn: coin,
+	}
 }
 
-func newCoinCommand() coinCommand {
-	return coinCommand{regexp.MustCompile(`(?i)^!coin [\w]+$`)}
-}
-
-func (cmd coinCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
-}
-
-func (cmd coinCommand) fn(s *dg.Session, m *dg.MessageCreate) {
+func coin(s *dg.Session, m *dg.MessageCreate) {
 	slice := strings.Split(m.Content, " ")
 	ticker := strings.ToUpper(slice[1])
 	coinURL := coinAPIURL + ticker + "&tsyms=USD"

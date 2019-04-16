@@ -38,19 +38,6 @@ var (
 	earningsWhisperURL    = config.GetConfig().EarningsWhisperURL
 )
 
-var (
-	ping           = newPingCommand()
-	stock          = newStockCommand()
-	er             = newErCommand()
-	wizdaddy       = newWizdaddyCommand()
-	coin           = newCoinCommand()
-	remindme       = newRemindmeCommand()
-	watchlist      = newWatchlistCommand()
-	clearwatchlist = newClearWatchlistCommand()
-	news           = newNewsCommand()
-	nexter         = newNextErCommand()
-)
-
 func init() {
 	token = os.Getenv("BOT_TOKEN")
 
@@ -63,8 +50,18 @@ func init() {
 	cronner = cron.NewWithLocation(pst)
 	cronner.Start()
 
-	commands = append(commands, ping, stock, er, wizdaddy, coin, remindme, watchlist, clearwatchlist,
-		news, nexter)
+	commands = append(commands,
+		newPingCommand(),
+		newStockCommand(),
+		newErCommand(),
+		newWizdaddyCommand(),
+		newCoinCommand(),
+		newRemindmeCommand(),
+		newWatchlistCommand(),
+		newClearWatchlistCommand(),
+		newNewsCommand(),
+		newNextErCommand(),
+	)
 }
 
 func Commander() func(s *dg.Session, m *dg.MessageCreate) {

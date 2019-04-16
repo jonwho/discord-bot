@@ -12,21 +12,16 @@ import (
 	"github.com/gocolly/colly"
 )
 
-type nexterCommand struct {
-	regex *regexp.Regexp
+func newNextErCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!nexter(\s[1-9]\d*)?$`).MatchString(s)
+		},
+		fn: nexter,
+	}
 }
 
-func newNextErCommand() nexterCommand {
-	return nexterCommand{regexp.MustCompile(`(?i)^!nexter(\s[1-9]\d*)?$`)}
-}
-
-func (cmd nexterCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
-}
-
-func (cmd nexterCommand) fn(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
-	logger.Info("nexter test")
+func nexter(s *dg.Session, m *dg.MessageCreate) {
 	slice := strings.Split(m.Content, " ")
 
 	days := 1

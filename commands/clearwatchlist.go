@@ -6,20 +6,17 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-type clearwatchlistCommand struct {
-	regex *regexp.Regexp
+func newClearWatchlistCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!clearwatchlist$`).MatchString(s)
+		},
+		fn: clearwatchlist,
+	}
 }
 
-func newClearWatchlistCommand() clearwatchlistCommand {
-	return clearwatchlistCommand{regexp.MustCompile(`(?i)^!clearwatchlist$`)}
-}
-
-func (cmd clearwatchlistCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
-}
-
-// ClearWatchlist remove entire watchlist
-func (cmd clearwatchlistCommand) fn(s *dg.Session, m *dg.MessageCreate) {
+// remove entire watchlist
+func clearwatchlist(s *dg.Session, m *dg.MessageCreate) {
 	redisClient.Del(watchlistRedisKey)
 	s.ChannelMessageSend(m.ChannelID, "watchlist cleared")
 }

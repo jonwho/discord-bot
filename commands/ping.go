@@ -6,18 +6,15 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-type pingCommand struct {
-	regex *regexp.Regexp
+func newPingCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!ping$`).MatchString(s)
+		},
+		fn: ping,
+	}
 }
 
-func newPingCommand() pingCommand {
-	return pingCommand{regexp.MustCompile(`(?i)^!ping$`)}
-}
-
-func (cmd pingCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
-}
-
-func (cmd pingCommand) fn(s *dg.Session, m *dg.MessageCreate) {
+func ping(s *dg.Session, m *dg.MessageCreate) {
 	s.ChannelMessageSend(m.ChannelID, "pong!")
 }

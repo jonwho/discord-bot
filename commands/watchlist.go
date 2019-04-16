@@ -10,25 +10,22 @@ import (
 	iex "github.com/jonwho/go-iex"
 )
 
-type watchlistCommand struct {
-	regex *regexp.Regexp
-}
-
 func init() {
 	// Run on 15 minute interval between hours 6-13 from Monday-Friday
 	cronner.AddFunc("0 0/15 6-13 * * MON-FRI", watchlistCron)
 }
 
-func newWatchlistCommand() watchlistCommand {
-	return watchlistCommand{regexp.MustCompile(`(?i)^!watchlist [\w ]+$`)}
-}
-
-func (cmd watchlistCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
+func newWatchlistCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!watchlist [\w ]+$`).MatchString(s)
+		},
+		fn: watchlist,
+	}
 }
 
 // Watchlist tickers to report on on an interval
-func (cmd watchlistCommand) fn(s *dg.Session, m *dg.MessageCreate) {
+func watchlist(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 
 	trimmed := strings.TrimSpace(m.Content)
@@ -55,12 +52,6 @@ func (cmd watchlistCommand) fn(s *dg.Session, m *dg.MessageCreate) {
 			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Adding ticker %s to watchlist", ticker))
 		}
 	}
-}
-
-// ClearWatchlist remove entire watchlist
-func ClearWatchlist(s *dg.Session, m *dg.MessageCreate) {
-	redisClient.Del(watchlistRedisKey)
-	s.ChannelMessageSend(m.ChannelID, "watchlist cleared")
 }
 
 func watchlistCron() {

@@ -10,19 +10,16 @@ import (
 	iex "github.com/jonwho/go-iex"
 )
 
-type stockCommand struct {
-	regex *regexp.Regexp
+func newStockCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!stock [\w.]+$`).MatchString(s)
+		},
+		fn: stock,
+	}
 }
 
-func newStockCommand() stockCommand {
-	return stockCommand{regexp.MustCompile(`(?i)^!stock [\w.]+$`)}
-}
-
-func (cmd stockCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
-}
-
-func (cmd stockCommand) fn(s *dg.Session, m *dg.MessageCreate) {
+func stock(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 	slice := strings.Split(m.Content, " ")
 	ticker := slice[1]

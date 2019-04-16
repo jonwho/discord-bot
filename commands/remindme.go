@@ -12,21 +12,18 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type remindmeCommand struct {
-	regex *regexp.Regexp
-}
-
 func init() {
 	// Run once at 6:00 AM from Monday-Friday
 	cronner.AddFunc("0 0 6 * * MON-FRI", todaysReminders)
 }
 
-func newRemindmeCommand() remindmeCommand {
-	return remindmeCommand{regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`)}
-}
-
-func (cmd remindmeCommand) match(s string) bool {
-	return cmd.regex.MatchString(s)
+func newRemindmeCommand() command {
+	return command{
+		match: func(s string) bool {
+			return regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`).MatchString(s)
+		},
+		fn: remindme,
+	}
 }
 
 /*
@@ -35,7 +32,7 @@ func (cmd remindmeCommand) match(s string) bool {
  */
 
 // Remindme creates a reminder entry into datastore (Redis)
-func (cmd remindmeCommand) fn(s *dg.Session, m *dg.MessageCreate) {
+func remindme(s *dg.Session, m *dg.MessageCreate) {
 	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 
 	slice := strings.Split(m.Content, " ")
