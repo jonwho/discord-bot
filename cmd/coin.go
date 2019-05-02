@@ -1,37 +1,45 @@
-package commands
+package cmd
 
 import (
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/datasource"
 	"github.com/BryanSLam/discord-bot/util"
-	dg "github.com/bwmarrin/discordgo"
 )
 
-func newCoinCommand() command {
-	return command{
-		match: func(s string) bool {
+// NewCoinCommand TODO: @doc
+func NewCoinCommand() *Command {
+	return &Command{
+		Match: func(s string) bool {
 			return regexp.MustCompile(`(?i)^!coin [\w]+$`).MatchString(s)
 		},
-		fn: coin,
+		Fn: Coin,
 	}
 }
 
-func coin(s *dg.Session, m *dg.MessageCreate) {
-	slice := strings.Split(m.Content, " ")
+// Coin TODO: @doc
+func Coin(rw io.ReadWriter, logger *util.Logger, _ map[string]interface{}) {
+	buf, err := ioutil.ReadAll(rw)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+
+	slice := strings.Split(string(buf), " ")
 	ticker := strings.ToUpper(slice[1])
 	coinURL := coinAPIURL + ticker + "&tsyms=USD"
-	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
 
 	logger.Info("Fetching coin info for: " + ticker)
 	resp, err := http.Get(coinURL)
 
 	if err != nil {
 		logger.Trace("Coin request failed. Message: " + err.Error())
-		s.ChannelMessageSend(m.ChannelID, err.Error())
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
@@ -39,10 +47,10 @@ func coin(s *dg.Session, m *dg.MessageCreate) {
 
 	if err = json.NewDecoder(resp.Body).Decode(&coin); err != nil || coin.Response == "Error" {
 		logger.Trace("JSON decoding failed. Message: " + err.Error())
-		s.ChannelMessageSend(m.ChannelID, err.Error())
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
-	s.ChannelMessageSend(m.ChannelID, coin.OutputJSON())
+	rw.Write([]byte(coin.OutputJSON()))
 	defer resp.Body.Close()
 }

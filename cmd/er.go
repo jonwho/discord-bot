@@ -1,31 +1,38 @@
-package commands
+package cmd
 
 import (
+	"io"
+	"io/ioutil"
 	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
-	dg "github.com/bwmarrin/discordgo"
 	iex "github.com/jonwho/go-iex"
 )
 
-func newErCommand() command {
-	return command{
-		match: func(s string) bool {
+// NewErCommand TODO: @doc
+func NewErCommand() *Command {
+	return &Command{
+		Match: func(s string) bool {
 			return regexp.MustCompile(`(?i)^!er [\w.]+$`).MatchString(s)
 		},
-		fn: er,
+		Fn: Er,
 	}
 }
 
-func er(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
-	slice := strings.Split(m.Content, " ")
+// Er TODO: @doc
+func Er(rw io.ReadWriter, logger *util.Logger, _ map[string]interface{}) {
+	buf, err := ioutil.ReadAll(rw)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	slice := strings.Split(string(buf), " ")
 	ticker := slice[1]
 	iexClient, err := iex.NewClient()
 	if err != nil {
 		logger.Trace("IEX client initialization failed. Message: " + err.Error())
-		s.ChannelMessageSend(m.ChannelID, err.Error())
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
@@ -34,11 +41,11 @@ func er(s *dg.Session, m *dg.MessageCreate) {
 
 	if err != nil {
 		logger.Trace("IEX request failed. Message: " + err.Error())
-		s.ChannelMessageSend(m.ChannelID, err.Error())
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
 	message := util.FormatEarnings(earnings)
 
-	s.ChannelMessageSend(m.ChannelID, message)
+	rw.Write([]byte(message))
 }

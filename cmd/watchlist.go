@@ -1,7 +1,9 @@
-package commands
+package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"regexp"
 	"strings"
 
@@ -15,26 +17,34 @@ func init() {
 	cronner.AddFunc("0 0/15 6-13 * * MON-FRI", watchlistCron)
 }
 
-func newWatchlistCommand() command {
-	return command{
-		match: func(s string) bool {
+// NewWatchlistCommand TODO: @doc
+func NewWatchlistCommand() *Command {
+	return &Command{
+		Match: func(s string) bool {
 			return regexp.MustCompile(`(?i)^!watchlist [\w ]+$`).MatchString(s)
 		},
-		fn: watchlist,
+		Fn: Watchlist,
 	}
 }
 
-// Watchlist tickers to report on on an interval
-func watchlist(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
+// Watchlist TODO: @doc
+func Watchlist(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
+	buf, err := ioutil.ReadAll(rw)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
 
-	trimmed := strings.TrimSpace(m.Content)
+	mc := m["messageCreate"].(*dg.MessageCreate)
+	channelID := mc.ChannelID
+
+	trimmed := strings.TrimSpace(string(buf))
 	slice := strings.Split(trimmed, " ")
 	tickers := slice[1:]
 	iexClient, err := iex.NewClient()
 	if err != nil {
 		logger.Trace("IEX client initialization failed. Message: " + err.Error())
-		s.ChannelMessageSend(m.ChannelID, err.Error())
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
@@ -44,12 +54,12 @@ func watchlist(s *dg.Session, m *dg.MessageCreate) {
 		if err != nil {
 			errStr := fmt.Sprintf("IEX request failed for ticker %s. Message: %s", ticker, err.Error())
 			logger.Trace(errStr)
-			s.ChannelMessageSend(m.ChannelID, errStr)
+			rw.Write([]byte(errStr))
 		} else if quote == nil {
 			logger.Trace(fmt.Sprintf("nil quote from ticker: %s", ticker))
 		} else {
-			redisClient.SAdd(watchlistRedisKey, fmt.Sprintf("%s~*%s", m.ChannelID, ticker))
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Adding ticker %s to watchlist", ticker))
+			redisClient.SAdd(watchlistRedisKey, fmt.Sprintf("%s~*%s", channelID, ticker))
+			rw.Write([]byte(fmt.Sprintf("Adding ticker %s to watchlist", ticker)))
 		}
 	}
 }

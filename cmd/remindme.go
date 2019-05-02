@@ -1,8 +1,10 @@
-package commands
+package cmd
 
 import (
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
@@ -17,39 +19,45 @@ func init() {
 	cronner.AddFunc("0 0 6 * * MON-FRI", todaysReminders)
 }
 
-func newRemindmeCommand() command {
-	return command{
-		match: func(s string) bool {
+// NewRemindmeCommand TODO: @doc
+func NewRemindmeCommand() *Command {
+	return &Command{
+		Match: func(s string) bool {
 			return regexp.MustCompile(`(?i)^!remindme [\w ]+ (0?[1-9]|1[012])/(0?[1-9]|[12][0-9]|3[01])/(\d\d)$`).MatchString(s)
 		},
-		fn: remindme,
+		Fn: Remindme,
 	}
 }
 
-/*
- * Set up redis table in a way where the keys are the dates of when to pull a reminder
- * and the value is an array of events that need to be reminded on that date
- */
+// Set up redis table in a way where the keys are the dates of when to pull a reminder
+// and the value is an array of events that need to be reminded on that date
 
 // Remindme creates a reminder entry into datastore (Redis)
-func remindme(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
+func Remindme(drw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
+	buf, err := ioutil.ReadAll(drw)
+	if err != nil {
+		drw.Write([]byte(err.Error()))
+		return
+	}
 
-	slice := strings.Split(m.Content, " ")
+	mc := m["messageCreate"].(*dg.MessageCreate)
+	channelID := mc.ChannelID
+
+	slice := strings.Split(string(buf), " ")
 	date := slice[len(slice)-1]
 	// grab message string in between command and date
 	msgSlice := slice[1 : len(slice)-1]
 	msg := strings.Join(msgSlice, " ")
-	reminder := fmt.Sprintf("%s~*REMINDER <@%s>: %s", m.ChannelID, m.Author.Mention(), msg)
+	reminder := fmt.Sprintf("%s~*REMINDER %s: %s", channelID, mc.Author.Mention(), msg)
 
-	err := addReminder(reminder, date)
+	err = addReminder(reminder, date)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, err.Error())
+		drw.Write([]byte(err.Error()))
 		logger.Trace("Remindme request failed: " + err.Error())
 		return
 	}
 
-	s.ChannelMessageSend(m.ChannelID, "Reminder set for "+date+" at 6:00 AM")
+	drw.Write([]byte("Reminder set for " + date + " at 6:00 AM"))
 }
 
 // addReminder will function as a stack; pushing new reminder messages for the date key.

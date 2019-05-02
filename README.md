@@ -1,10 +1,13 @@
 # discord-bot
 
 ## Requirements
-* Go 1.11
-    * Download from here: https://golang.org/dl/
-    * Update Go using instructions here: https://gist.github.com/nikhita/432436d570b89cab172dcf2894465753
-    * Verify with `go version`
+* Go 1.12
+### Method 1
+  * Download from here: https://golang.org/dl/
+  * Update Go using instructions here: https://gist.github.com/nikhita/432436d570b89cab172dcf2894465753
+  * Verify with `go version`
+### Method 2
+  * Follow instructions at https://github.com/udhos/update-golang
 * Discord Application with Bot support
 * Docker (optional)
 ## Get it running
@@ -22,7 +25,7 @@ These values are made up you must supplement with your own credentials.
 * Get your bot token from discord from [here](https://discordapp.com/developers/applications/me).
 * Enable developer mode for Discord then right click channel or user to get ID.
 ```
-BOT_TOKEN=aaldhflj23roi0v8aaj1j13b.DLKLHAlkasjf9__1lk12hvaha-1-2987Q0
-BOT_LOG_CHANNEL_ID=819231023981718081
-MAINTAINERS=164098129888809171,917410876781231900
+BOT_TOKEN=aaldhflj23roi0v8aaj1j13b.DLKLHAlkasjf9__1lk12hvaha-1-2987Q0_FAKE
+BOT_LOG_CHANNEL_ID=819231023981718081_FAKE
+MAINTAINERS=164098129888809171_FAKE,917410876781231900_FAKE
 ```

@@ -1,32 +1,40 @@
-package commands
+package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
-	dg "github.com/bwmarrin/discordgo"
 	iex "github.com/jonwho/go-iex"
 )
 
-func newStockCommand() command {
-	return command{
-		match: func(s string) bool {
+// NewStockCommand TODO: @doc
+func NewStockCommand() *Command {
+	return &Command{
+		Match: func(s string) bool {
 			return regexp.MustCompile(`(?i)^!stock [\w.]+$`).MatchString(s)
 		},
-		fn: stock,
+		Fn: Stock,
 	}
 }
 
-func stock(s *dg.Session, m *dg.MessageCreate) {
-	logger := util.Logger{Session: s, ChannelID: botLogChannelID}
-	slice := strings.Split(m.Content, " ")
+// Stock TODO: @doc
+func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
+	buf, err := ioutil.ReadAll(rw)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+
+	slice := strings.Split(string(buf), " ")
 	ticker := slice[1]
 	iexClient, err := iex.NewClient()
 	if err != nil {
 		logger.Trace("IEX client initialization failed. Message: " + err.Error())
-		s.ChannelMessageSend(m.ChannelID, err.Error())
+		rw.Write([]byte(err.Error()))
 		return
 	}
 
@@ -36,7 +44,7 @@ func stock(s *dg.Session, m *dg.MessageCreate) {
 		rds, iexErr := iexClient.RefDataSymbols()
 		if iexErr != nil {
 			logger.Trace("IEX request failed. Message: " + iexErr.Error())
-			s.ChannelMessageSend(m.ChannelID, iexErr.Error())
+			rw.Write([]byte(iexErr.Error()))
 			return
 		}
 
@@ -45,7 +53,7 @@ func stock(s *dg.Session, m *dg.MessageCreate) {
 		if len(fuzzySymbols) > 0 {
 			fuzzySymbols = fuzzySymbols[:len(fuzzySymbols)%10]
 			outputJSON := util.FormatFuzzySymbols(fuzzySymbols)
-			s.ChannelMessageSend(m.ChannelID, outputJSON)
+			rw.Write([]byte(outputJSON))
 			return
 		}
 	}
@@ -55,5 +63,5 @@ func stock(s *dg.Session, m *dg.MessageCreate) {
 	}
 
 	message := util.FormatQuote(quote)
-	s.ChannelMessageSend(m.ChannelID, message)
+	rw.Write([]byte(message))
 }

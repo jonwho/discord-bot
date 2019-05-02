@@ -15,6 +15,7 @@ var (
 	pst, _ = time.LoadLocation("America/Los_Angeles")
 )
 
+// FormatNews TODO: @doc
 func FormatNews(news *iex.NewsDTO) string {
 	fmtStr := news.Headline + "\n"
 	fmtStr += news.URL + "\n"
@@ -22,6 +23,7 @@ func FormatNews(news *iex.NewsDTO) string {
 	return fmtStr
 }
 
+// FormatQuote TODO: @doc
 func FormatQuote(quote *iex.Quote) string {
 	stringOrder := []string{
 		"Symbol",
@@ -82,6 +84,7 @@ func FormatQuote(quote *iex.Quote) string {
 	return fmtStr
 }
 
+// FormatEarnings TODO: @doc
 func FormatEarnings(earnings *iex.Earnings) string {
 	stringOrder := []string{
 		"Symbol",
@@ -132,6 +135,7 @@ func FormatEarnings(earnings *iex.Earnings) string {
 	return fmtStr
 }
 
+// FormatFuzzySymbols TODO: @doc
 func FormatFuzzySymbols(symbols []iex.SymbolDTO) string {
 	printer := message.NewPrinter(language.English)
 	fmtStr := "```\n"
@@ -145,12 +149,7 @@ func FormatFuzzySymbols(symbols []iex.SymbolDTO) string {
 	return fmtStr
 }
 
-func outsideNormalTradingHours() bool {
-	now := time.Now().In(pst)
-
-	return now.Hour() >= 13 || (now.Hour() <= 6 && now.Minute() <= 30)
-}
-
+// FormatUpcomingErs TODO: @doc
 func FormatUpcomingErs(ers []struct {
 	Ticker  string
 	Company string
@@ -167,4 +166,14 @@ func FormatUpcomingErs(ers []struct {
 	fmtStr += "```\n"
 
 	return fmtStr
+}
+
+/***************************************************************************************************
+ * PRIVATE BELOW
+ **************************************************************************************************/
+
+func outsideNormalTradingHours() bool {
+	now := time.Now().In(pst)
+
+	return now.Hour() >= 13 || (now.Hour() <= 6 && now.Minute() <= 30)
 }

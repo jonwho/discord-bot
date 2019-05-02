@@ -1,28 +1,36 @@
-package commands
+package cmd
 
 import (
 	"fmt"
-	"log"
+	"io"
+	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
-	dg "github.com/bwmarrin/discordgo"
 	"github.com/gocolly/colly"
 )
 
-func newNextErCommand() command {
-	return command{
-		match: func(s string) bool {
+// NewNextErCommand TODO: @doc
+func NewNextErCommand() *Command {
+	return &Command{
+		Match: func(s string) bool {
 			return regexp.MustCompile(`(?i)^!nexter(\s[1-9]\d*)?$`).MatchString(s)
 		},
-		fn: nexter,
+		Fn: Nexter,
 	}
 }
 
-func nexter(s *dg.Session, m *dg.MessageCreate) {
-	slice := strings.Split(m.Content, " ")
+// Nexter TODO: @doc
+func Nexter(rw io.ReadWriter, logger *util.Logger, _ map[string]interface{}) {
+	buf, err := ioutil.ReadAll(rw)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+
+	slice := strings.Split(string(buf), " ")
 
 	days := 1
 	if len(slice) > 1 {
@@ -37,11 +45,11 @@ func nexter(s *dg.Session, m *dg.MessageCreate) {
 	upcomingEarnings := visit(url)
 	if len(upcomingEarnings) > 0 {
 		message := util.FormatUpcomingErs(upcomingEarnings)
-		s.ChannelMessageSend(m.ChannelID, message)
+		rw.Write([]byte(message))
 		return
 	}
 	message := fmt.Sprintf("No earnings found %d days from now", days)
-	s.ChannelMessageSend(m.ChannelID, message)
+	rw.Write([]byte(message))
 }
 
 func visit(url string) []struct {
@@ -50,7 +58,6 @@ func visit(url string) []struct {
 	EPS     string
 	REV     string
 } {
-	log.Println("Visiting URL", url)
 
 	ers := []struct {
 		Ticker  string
