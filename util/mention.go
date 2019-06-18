@@ -3,12 +3,10 @@ package util
 import (
 	"fmt"
 	"strings"
-
-	"github.com/BryanSLam/discord-bot/config"
 )
 
-func MentionMaintainers() string {
-	maintainers := strings.Split(config.GetConfig().Maintainers, ",")
+// MentionMaintainers TODO: @doc
+func MentionMaintainers(maintainers []string) string {
 	for index, maintainer := range maintainers {
 		maintainers[index] = fmt.Sprintf("<@%s>", maintainer)
 	}

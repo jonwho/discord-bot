@@ -15,13 +15,18 @@ var (
 	pst, _ = time.LoadLocation("America/Los_Angeles")
 )
 
-func FormatNews(news *iex.NewsDTO) string {
-	fmtStr := news.Headline + "\n"
-	fmtStr += news.URL + "\n"
+// FormatNews TODO: @doc
+func FormatNews(news iex.News) string {
+	fmtStr := ""
+	for _, e := range news {
+		fmtStr += e.Headline + "\n"
+		fmtStr += e.URL + "\n"
+	}
 
 	return fmtStr
 }
 
+// FormatQuote TODO: @doc
 func FormatQuote(quote *iex.Quote) string {
 	stringOrder := []string{
 		"Symbol",
@@ -34,12 +39,11 @@ func FormatQuote(quote *iex.Quote) string {
 		"Change % (1 day)",
 		"Delta",
 		"Volume",
-		"PE Ratio",
 	}
 
-	var current float32
-	var changePercent float32
-	var delta float32
+	var current float64
+	var changePercent float64
+	var delta float64
 
 	if outsideNormalTradingHours() {
 		current = quote.ExtendedPrice
@@ -62,7 +66,6 @@ func FormatQuote(quote *iex.Quote) string {
 		"Change % (1 day)": fmt.Sprintf("%#v", changePercent) + " %",
 		"Delta":            fmt.Sprintf("%#v", Round(float64(delta))),
 		"Volume":           fmt.Sprintf("%#v", quote.LatestVolume),
-		"PE Ratio":         fmt.Sprintf("%#v", quote.PeRatio),
 	}
 
 	printer := message.NewPrinter(language.English)
@@ -82,11 +85,12 @@ func FormatQuote(quote *iex.Quote) string {
 	return fmtStr
 }
 
+// FormatEarnings TODO: @doc
 func FormatEarnings(earnings *iex.Earnings) string {
 	stringOrder := []string{
 		"Symbol",
 		"Actual EPS",
-		"Estimated EPS",
+		"Consensus EPS",
 		"EPS delta",
 		"Announce Time",
 		"Fiscal Start Date",
@@ -103,7 +107,7 @@ func FormatEarnings(earnings *iex.Earnings) string {
 	outputMap := map[string]string{
 		"Symbol":            earnings.Symbol,
 		"Actual EPS":        fmt.Sprintf("%#v", recentEarnings.ActualEPS),
-		"Estimated EPS":     fmt.Sprintf("%#v", recentEarnings.EstimatedEPS),
+		"Consensus EPS":     fmt.Sprintf("%#v", recentEarnings.ConsensusEPS),
 		"EPS delta":         fmt.Sprintf("%#v", recentEarnings.EPSSurpriseDollar),
 		"Announce Time":     recentEarnings.AnnounceTime,
 		"Fiscal Start Date": recentEarnings.FiscalEndDate,
@@ -132,7 +136,11 @@ func FormatEarnings(earnings *iex.Earnings) string {
 	return fmtStr
 }
 
-func FormatFuzzySymbols(symbols []iex.SymbolDTO) string {
+// FormatFuzzySymbols TODO: @doc
+func FormatFuzzySymbols(symbols []struct {
+	Symbol string
+	Name   string
+}) string {
 	printer := message.NewPrinter(language.English)
 	fmtStr := "```\n"
 	fmtStr += "Could not find symbol you requested. Did you mean one of these symbols?\n\n"
@@ -144,6 +152,29 @@ func FormatFuzzySymbols(symbols []iex.SymbolDTO) string {
 
 	return fmtStr
 }
+
+// FormatUpcomingErs TODO: @doc
+func FormatUpcomingErs(ers []struct {
+	Ticker  string
+	Company string
+	EPS     string
+	REV     string
+}) string {
+	fmtStr := "```\n"
+
+	for _, er := range ers {
+		fmtStr += fmt.Sprintf("Ticker: %s\nCompany: %s\nEstimated EPS: %s\nEstimated REV: %s\n",
+			er.Ticker, er.Company, er.EPS, er.REV)
+	}
+
+	fmtStr += "```\n"
+
+	return fmtStr
+}
+
+/***************************************************************************************************
+ * PRIVATE BELOW
+ **************************************************************************************************/
 
 func outsideNormalTradingHours() bool {
 	now := time.Now().In(pst)

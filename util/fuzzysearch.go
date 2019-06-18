@@ -6,7 +6,7 @@ import (
 	iex "github.com/jonwho/go-iex"
 )
 
-// compute the edit-distance aka cost between the two strings
+// Levenshtein compute the edit-distance aka cost between the two strings
 func Levenshtein(s, t string) int {
 	sLen := len(s)
 	tLen := len(t)
@@ -51,7 +51,7 @@ func Levenshtein(s, t string) int {
 	return matrix[sLen][tLen]
 }
 
-// computes Soundex value for the string
+// Soundex computes Soundex value for the string
 func Soundex(s string) string {
 	m := map[byte]string{
 		'B': "1", 'P': "1", 'F': "1", 'V': "1",
@@ -88,13 +88,14 @@ func Soundex(s string) string {
 	return soundexValue
 }
 
-func FuzzySearch(ticker string, symbols []iex.SymbolDTO) []iex.SymbolDTO {
-	var fuzzySymbols []iex.SymbolDTO
+// FuzzySearch find a similar ticker that matches
+func FuzzySearch(ticker string, symbols iex.IEXSymbols) iex.IEXSymbols {
+	var fuzzySymbols iex.IEXSymbols
 
 	tickerSoundex := Soundex(ticker)
-	for _, symbolDTO := range symbols {
-		if tickerSoundex == Soundex(symbolDTO.Symbol) {
-			fuzzySymbols = append(fuzzySymbols, symbolDTO)
+	for _, symbol := range symbols {
+		if tickerSoundex == Soundex(symbol.Symbol) {
+			fuzzySymbols = append(fuzzySymbols, symbol)
 		}
 	}
 
