@@ -26,7 +26,7 @@ func TestStock(t *testing.T) {
 	logger := util.NewLogger(logWriter)
 	Stock(buf, logger, nil)
 	actual := buf.String()
-	if actual == "" {
+	if actual != "" {
 		t.Errorf("Expected buf to be written to with stock quote but got\n%v\n", actual)
 	}
 }

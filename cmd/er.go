@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -29,7 +30,8 @@ func Er(rw io.ReadWriter, logger *util.Logger, _ map[string]interface{}) {
 	}
 	slice := strings.Split(string(buf), " ")
 	ticker := slice[1]
-	iexClient, err := iex.NewClient()
+	iexSecretToken := os.Getenv("IEX_SECRET_TOKEN")
+	iexClient, err := iex.NewClient(iexSecretToken)
 	if err != nil {
 		logger.Trace("IEX client initialization failed. Message: " + err.Error())
 		rw.Write([]byte(err.Error()))
@@ -37,7 +39,7 @@ func Er(rw io.ReadWriter, logger *util.Logger, _ map[string]interface{}) {
 	}
 
 	logger.Info("Fetching earnings report info for " + ticker)
-	earnings, err := iexClient.Earnings(ticker)
+	earnings, err := iexClient.Earnings(ticker, nil)
 
 	if err != nil {
 		logger.Trace("IEX request failed. Message: " + err.Error())

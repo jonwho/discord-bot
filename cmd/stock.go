@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -31,7 +32,8 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 
 	slice := strings.Split(string(buf), " ")
 	ticker := slice[1]
-	iexClient, err := iex.NewClient()
+	iexSecretToken := os.Getenv("IEX_SECRET_TOKEN")
+	iexClient, err := iex.NewClient(iexSecretToken)
 	if err != nil {
 		logger.Trace("IEX client initialization failed. Message: " + err.Error())
 		rw.Write([]byte(err.Error()))
@@ -39,27 +41,29 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 	}
 
 	logger.Info("Fetching stock info for " + ticker)
-	quote, err := iexClient.Quote(ticker, true)
-	if err != nil {
-		rds, iexErr := iexClient.RefDataSymbols()
-		if iexErr != nil {
-			logger.Trace("IEX request failed. Message: " + iexErr.Error())
-			rw.Write([]byte(iexErr.Error()))
-			return
-		}
-
-		fuzzySymbols := util.FuzzySearch(ticker, rds.Symbols)
-
-		if len(fuzzySymbols) > 0 {
-			fuzzySymbols = fuzzySymbols[:len(fuzzySymbols)%10]
-			outputJSON := util.FormatFuzzySymbols(fuzzySymbols)
-			rw.Write([]byte(outputJSON))
-			return
-		}
-	}
+	quote, err := iexClient.Quote(ticker, nil)
+	// TODO: cache the results from reference data before using this to preserve messaging limit
+	// if err != nil {
+	//   symbols, iexErr := iexClient.ExchangeSymbols()
+	//   if iexErr != nil {
+	//     logger.Trace("IEX request failed. Message: " + iexErr.Error())
+	//     rw.Write([]byte(iexErr.Error()))
+	//     return
+	//   }
+	//
+	//   fuzzySymbols := util.FuzzySearch(ticker, symbols)
+	//
+	//   if len(fuzzySymbols) > 0 {
+	//     fuzzySymbols = fuzzySymbols[:len(fuzzySymbols)%10]
+	//     outputJSON := util.FormatFuzzySymbols(fuzzySymbols)
+	//     rw.Write([]byte(outputJSON))
+	//     return
+	//   }
+	// }
 
 	if quote == nil {
 		logger.Trace(fmt.Sprintf("nil quote from ticker: %s", ticker))
+		return
 	}
 
 	message := util.FormatQuote(quote)

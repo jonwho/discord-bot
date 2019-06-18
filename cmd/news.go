@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -31,7 +32,8 @@ func News(rw io.ReadWriter, logger *util.Logger, _ map[string]interface{}) {
 
 	slice := strings.Split(string(buf), " ")
 	ticker := slice[1]
-	iexClient, err := iex.NewClient()
+	iexSecretToken := os.Getenv("IEX_SECRET_TOKEN")
+	iexClient, err := iex.NewClient(iexSecretToken)
 	if err != nil {
 		logger.Trace("IEX client initialization failed. Message: " + err.Error())
 		rw.Write([]byte(err.Error()))
@@ -50,7 +52,5 @@ func News(rw io.ReadWriter, logger *util.Logger, _ map[string]interface{}) {
 		logger.Trace(fmt.Sprintf("nil news from ticker: %s", ticker))
 	}
 
-	for _, e := range news.News {
-		rw.Write([]byte(util.FormatNews(&e)))
-	}
+	rw.Write([]byte(util.FormatNews(news)))
 }

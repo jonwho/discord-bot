@@ -16,9 +16,12 @@ var (
 )
 
 // FormatNews TODO: @doc
-func FormatNews(news *iex.NewsDTO) string {
-	fmtStr := news.Headline + "\n"
-	fmtStr += news.URL + "\n"
+func FormatNews(news iex.News) string {
+	fmtStr := ""
+	for _, e := range news {
+		fmtStr += e.Headline + "\n"
+		fmtStr += e.URL + "\n"
+	}
 
 	return fmtStr
 }
@@ -36,12 +39,11 @@ func FormatQuote(quote *iex.Quote) string {
 		"Change % (1 day)",
 		"Delta",
 		"Volume",
-		"PE Ratio",
 	}
 
-	var current float32
-	var changePercent float32
-	var delta float32
+	var current float64
+	var changePercent float64
+	var delta float64
 
 	if outsideNormalTradingHours() {
 		current = quote.ExtendedPrice
@@ -64,7 +66,6 @@ func FormatQuote(quote *iex.Quote) string {
 		"Change % (1 day)": fmt.Sprintf("%#v", changePercent) + " %",
 		"Delta":            fmt.Sprintf("%#v", Round(float64(delta))),
 		"Volume":           fmt.Sprintf("%#v", quote.LatestVolume),
-		"PE Ratio":         fmt.Sprintf("%#v", quote.PeRatio),
 	}
 
 	printer := message.NewPrinter(language.English)
@@ -89,7 +90,7 @@ func FormatEarnings(earnings *iex.Earnings) string {
 	stringOrder := []string{
 		"Symbol",
 		"Actual EPS",
-		"Estimated EPS",
+		"Consensus EPS",
 		"EPS delta",
 		"Announce Time",
 		"Fiscal Start Date",
@@ -106,7 +107,7 @@ func FormatEarnings(earnings *iex.Earnings) string {
 	outputMap := map[string]string{
 		"Symbol":            earnings.Symbol,
 		"Actual EPS":        fmt.Sprintf("%#v", recentEarnings.ActualEPS),
-		"Estimated EPS":     fmt.Sprintf("%#v", recentEarnings.EstimatedEPS),
+		"Consensus EPS":     fmt.Sprintf("%#v", recentEarnings.ConsensusEPS),
 		"EPS delta":         fmt.Sprintf("%#v", recentEarnings.EPSSurpriseDollar),
 		"Announce Time":     recentEarnings.AnnounceTime,
 		"Fiscal Start Date": recentEarnings.FiscalEndDate,
@@ -136,7 +137,10 @@ func FormatEarnings(earnings *iex.Earnings) string {
 }
 
 // FormatFuzzySymbols TODO: @doc
-func FormatFuzzySymbols(symbols []iex.SymbolDTO) string {
+func FormatFuzzySymbols(symbols []struct {
+	Symbol string
+	Name   string
+}) string {
 	printer := message.NewPrinter(language.English)
 	fmtStr := "```\n"
 	fmtStr += "Could not find symbol you requested. Did you mean one of these symbols?\n\n"
