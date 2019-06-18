@@ -9,7 +9,7 @@ require (
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0
-	github.com/jonwho/go-iex v0.0.0-20190524055706-9c07d9f7843c
+	github.com/jonwho/go-iex v0.0.0-20190618021854-cf6636d5a097
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/kr/pty v1.1.5 // indirect
