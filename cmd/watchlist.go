@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
@@ -41,7 +42,8 @@ func Watchlist(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) 
 	trimmed := strings.TrimSpace(string(buf))
 	slice := strings.Split(trimmed, " ")
 	tickers := slice[1:]
-	iexClient, err := iex.NewClient()
+	iexSecretToken := os.Getenv("IEX_SECRET_TOKEN")
+	iexClient, err := iex.NewClient(iexSecretToken)
 	if err != nil {
 		logger.Trace("IEX client initialization failed. Message: " + err.Error())
 		rw.Write([]byte(err.Error()))
@@ -50,7 +52,7 @@ func Watchlist(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) 
 
 	for _, ticker := range tickers {
 		logger.Info("Fetching stock info for " + ticker)
-		quote, err := iexClient.Quote(ticker, true)
+		quote, err := iexClient.Quote(ticker, nil)
 		if err != nil {
 			errStr := fmt.Sprintf("IEX request failed for ticker %s. Message: %s", ticker, err.Error())
 			logger.Trace(errStr)
@@ -72,11 +74,12 @@ func watchlistCron() {
 	tickers := redisClient.SMembers(watchlistRedisKey).Val()
 
 	if len(tickers) > 0 {
-		iexClient, _ := iex.NewClient()
+		iexSecretToken := os.Getenv("IEX_SECRET_TOKEN")
+		iexClient, _ := iex.NewClient(iexSecretToken)
 		for _, ticker := range tickers {
 			split := strings.Split(ticker, "~*")
 			channel, symbol := split[0], split[1]
-			quote, _ := iexClient.Quote(symbol, true)
+			quote, _ := iexClient.Quote(symbol, nil)
 			message := util.FormatQuote(quote)
 			dgSession.ChannelMessageSend(channel, message)
 		}

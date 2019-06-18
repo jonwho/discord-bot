@@ -61,6 +61,7 @@ func commander(s *dg.Session, m *dg.MessageCreate) {
 						}
 					}()
 
+					// TODO: use context and change command to an interface instead of struct
 					mm := map[string]interface{}{}
 					mm["messageCreate"] = m
 
