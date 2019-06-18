@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
-	iex "github.com/jonwho/go-iex"
 )
 
 func init() {
@@ -42,13 +40,6 @@ func Watchlist(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) 
 	trimmed := strings.TrimSpace(string(buf))
 	slice := strings.Split(trimmed, " ")
 	tickers := slice[1:]
-	iexSecretToken := os.Getenv("IEX_SECRET_TOKEN")
-	iexClient, err := iex.NewClient(iexSecretToken)
-	if err != nil {
-		logger.Trace("IEX client initialization failed. Message: " + err.Error())
-		rw.Write([]byte(err.Error()))
-		return
-	}
 
 	for _, ticker := range tickers {
 		logger.Info("Fetching stock info for " + ticker)
@@ -74,8 +65,6 @@ func watchlistCron() {
 	tickers := redisClient.SMembers(watchlistRedisKey).Val()
 
 	if len(tickers) > 0 {
-		iexSecretToken := os.Getenv("IEX_SECRET_TOKEN")
-		iexClient, _ := iex.NewClient(iexSecretToken)
 		for _, ticker := range tickers {
 			split := strings.Split(ticker, "~*")
 			channel, symbol := split[0], split[1]

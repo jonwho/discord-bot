@@ -27,3 +27,12 @@ These values are made up you must supplement with your own credentials.
 * Grab your test/real tokens from [https://iexcloud.io/console/](https://iexcloud.io/console/)
 * `cp .env.example .env`
 * Fill in `.env` with your credentials
+
+## Run tests
+Assuming you have filled in the `.env` file tests with the following
+```
+docker-compose up
+docker-compse exec bot bash
+cd cmd
+go test
+```
