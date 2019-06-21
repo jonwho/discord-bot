@@ -32,7 +32,9 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 	ticker := slice[1]
 
 	logger.Info("Fetching stock info for " + ticker)
-	quote, err := iexClient.Quote(ticker, nil)
+	quote, err := iexClient.Quote(ticker, struct {
+		DisplayPercent bool `url:"displayPercent,omitempty"`
+	}{true})
 	// TODO: cache the results from reference data before using this to preserve messaging limit
 	// if err != nil {
 	//   symbols, iexErr := iexClient.ExchangeSymbols()
