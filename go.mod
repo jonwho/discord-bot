@@ -2,6 +2,7 @@ module github.com/BryanSLam/discord-bot
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.0 // indirect
+	github.com/alpacahq/alpaca-trade-api-go v1.3.6
 	github.com/antchfx/htmlquery v1.0.0 // indirect
 	github.com/antchfx/xmlquery v1.0.0 // indirect
 	github.com/antchfx/xpath v1.0.0 // indirect
