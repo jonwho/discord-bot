@@ -25,4 +25,12 @@ jobs:
         fi
 
     - name: Test
+      env:
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        BOT_LOG_CHANNEL_ID: ${{ secrets.BOT_LOG_CHANNEL_ID }}
+        MAINTAINERS: ${{ secrets.MAINTAINERS }}
+        IEX_TEST_SECRET_TOKEN: ${{ secrets.IEX_TEST_SECRET_TOKEN }}
+        IEX_TEST_PUBLISHABLE_TOKEN: ${{ secrets.IEX_TEST_PUBLISHABLE_TOKEN }}
+        IEX_SECRET_TOKEN: ${{ secrets.IEX_SECRET_TOKEN }}
+        IEX_PUBLISHABLE_TOKEN: ${{ secrets.IEX_PUBLISHABLE_TOKEN }}
       run: cd cmd && go test
