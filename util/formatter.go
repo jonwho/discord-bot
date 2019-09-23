@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	iex "github.com/jonwho/go-iex"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+
+	iex "github.com/jonwho/go-iex"
 )
 
 var (
@@ -80,6 +81,42 @@ func FormatQuote(quote *iex.Quote) string {
 		}
 	}
 
+	fmtStr += "```\n"
+
+	return fmtStr
+}
+
+// FormatBar TODO: @doc
+func FormatBar(bar struct {
+	Time   int64   `json:"t"`
+	Open   float32 `json:"o"`
+	High   float32 `json:"h"`
+	Low    float32 `json:"l"`
+	Close  float32 `json:"c"`
+	Volume int32   `json:"v"`
+}, symbol string) string {
+	stringOrder := []string{
+		"Symbol",
+		"Open",
+		"High",
+		"Low",
+		"Close",
+		"Volume",
+	}
+
+	outputMap := map[string]string{
+		"Symbol": symbol,
+		"Open":   fmt.Sprintf("%#v", bar.Open),
+		"High":   fmt.Sprintf("%#v", bar.High),
+		"Low":    fmt.Sprintf("%#v", bar.Low),
+		"Close":  fmt.Sprintf("%#v", bar.Close),
+		"Volume": fmt.Sprintf("%#v", bar.Volume),
+	}
+
+	fmtStr := "```\n"
+	for _, k := range stringOrder {
+		fmtStr += fmt.Sprintf("%-10s %-20s\n", k, outputMap[k])
+	}
 	fmtStr += "```\n"
 
 	return fmtStr

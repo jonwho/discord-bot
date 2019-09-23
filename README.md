@@ -32,7 +32,7 @@ These values are made up you must supplement with your own credentials.
 Assuming you have filled in the `.env` file tests with the following
 ```
 docker-compose up
-docker-compse exec bot bash
+docker-compose exec bot bash
 cd cmd
 go test
 ```

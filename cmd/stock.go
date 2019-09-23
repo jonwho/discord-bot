@@ -1,14 +1,17 @@
 package cmd
 
 import (
-	"fmt"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
+	"net/http"
 )
+
+const dataURL string = "https://data.alpaca.markets/v1/bars/1Min"
 
 // NewStockCommand TODO: @doc
 func NewStockCommand() *Command {
@@ -29,36 +32,53 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 	}
 
 	slice := strings.Split(string(buf), " ")
-	ticker := slice[1]
+	ticker := strings.ToUpper(slice[1])
 
 	logger.Info("Fetching stock info for " + ticker)
-	quote, err := iexClient.Quote(ticker, struct {
-		DisplayPercent bool `url:"displayPercent,omitempty"`
-	}{true})
-	// TODO: cache the results from reference data before using this to preserve messaging limit
-	// if err != nil {
-	//   symbols, iexErr := iexClient.ExchangeSymbols()
-	//   if iexErr != nil {
-	//     logger.Trace("IEX request failed. Message: " + iexErr.Error())
-	//     rw.Write([]byte(iexErr.Error()))
-	//     return
-	//   }
-	//
-	//   fuzzySymbols := util.FuzzySearch(ticker, symbols)
-	//
-	//   if len(fuzzySymbols) > 0 {
-	//     fuzzySymbols = fuzzySymbols[:len(fuzzySymbols)%10]
-	//     outputJSON := util.FormatFuzzySymbols(fuzzySymbols)
-	//     rw.Write([]byte(outputJSON))
-	//     return
-	//   }
-	// }
+	req, err := http.NewRequest(http.MethodGet, dataURL, nil)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	req.Header.Set("APCA-API-KEY-ID", alpacaID)
+	req.Header.Set("APCA-API-SECRET-KEY", alpacaKey)
+	q := req.URL.Query()
+	q.Add("limit", "1")
+	q.Add("symbols", ticker)
+	req.URL.RawQuery = q.Encode()
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	defer resp.Body.Close()
 
-	if quote == nil {
-		logger.Trace(fmt.Sprintf("nil quote from ticker: %s", ticker))
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	data := map[string][]struct {
+		Time   int64   `json:"t"`
+		Open   float32 `json:"o"`
+		High   float32 `json:"h"`
+		Low    float32 `json:"l"`
+		Close  float32 `json:"c"`
+		Volume int32   `json:"v"`
+	}{}
+	err = json.Unmarshal(bodyBytes, &data)
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	if len(data[ticker]) == 0 {
+		rw.Write([]byte("No data found for " + ticker))
 		return
 	}
 
-	message := util.FormatQuote(quote)
+	bar := data[ticker][0]
+	message := util.FormatBar(bar, ticker)
+
 	rw.Write([]byte(message))
 }

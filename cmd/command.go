@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/BryanSLam/discord-bot/util"
+	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
+	"github.com/alpacahq/alpaca-trade-api-go/common"
 	"github.com/go-redis/redis"
 	iex "github.com/jonwho/go-iex"
 	"github.com/robfig/cron"
@@ -25,10 +27,13 @@ const (
 	coinAPIURL         string = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms="
 	wizdaddyURL        string = "http://dev.wizdaddy.io/api/giveItToMeDaddy"
 	earningsWhisperURL string = "https://www.earningswhispers.com/calendar?sb=p&t=all"
+	alpacaPaperURL     string = "https://paper-api.alpaca.markets"
 )
 
 var (
 	token, iexSecretToken string
+	alpacaID, alpacaKey   string
+	alpacaClient          *alpaca.Client
 	redisClient           *redis.Client
 	iexClient             *iex.Client
 	cronner               *cron.Cron
@@ -53,6 +58,21 @@ func init() {
 		log.Fatalln("IEX client initialization failed. Message: " + err.Error())
 		return
 	}
+
+	alpacaID = os.Getenv("ALPACA_KEY_ID")
+	if alpacaID == "" {
+		log.Fatalln("Alpaca key id cannot be blank")
+		return
+	}
+	alpacaKey = os.Getenv("ALPACA_SECRET_KEY")
+	if alpacaKey == "" {
+		log.Fatalln("Alpaca secret key cannot be blank")
+		return
+	}
+	os.Setenv(common.EnvApiKeyID, alpacaID)
+	os.Setenv(common.EnvApiSecretKey, alpacaKey)
+	alpaca.SetBaseUrl(alpacaPaperURL)
+	alpacaClient = alpaca.NewClient(common.Credentials())
 
 	redisClient = redis.NewClient(&redis.Options{
 		Addr:     "redis:6379",
