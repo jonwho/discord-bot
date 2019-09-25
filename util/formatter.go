@@ -64,7 +64,7 @@ func FormatQuote(quote *iex.Quote) string {
 		"Low":              fmt.Sprintf("%#v", quote.Low),
 		"Open":             fmt.Sprintf("%#v", quote.Open),
 		"Close":            fmt.Sprintf("%#v", quote.Close),
-		"Change % (1 day)": fmt.Sprintf("%#v", changePercent) + " %",
+		"Change % (1 day)": fmt.Sprintf("%#v %%", changePercent),
 		"Delta":            fmt.Sprintf("%#v", Round(float64(delta))),
 		"Volume":           fmt.Sprintf("%#v", quote.LatestVolume),
 	}
@@ -101,22 +101,102 @@ func FormatBar(bar struct {
 		"High",
 		"Low",
 		"Close",
+		"Delta",
+		"Change %",
 		"Volume",
 	}
 
+	delta := bar.Close - bar.Open
+	perc := Round(float64((bar.Close - bar.Open) / bar.Open * 100))
+
 	outputMap := map[string]string{
-		"Symbol": symbol,
-		"Open":   fmt.Sprintf("%#v", bar.Open),
-		"High":   fmt.Sprintf("%#v", bar.High),
-		"Low":    fmt.Sprintf("%#v", bar.Low),
-		"Close":  fmt.Sprintf("%#v", bar.Close),
-		"Volume": fmt.Sprintf("%#v", bar.Volume),
+		"Symbol":   symbol,
+		"Open":     fmt.Sprintf("%.2f", bar.Open),
+		"High":     fmt.Sprintf("%.2f", bar.High),
+		"Low":      fmt.Sprintf("%.2f", bar.Low),
+		"Close":    fmt.Sprintf("%.2f", bar.Close),
+		"Delta":    fmt.Sprintf("%.2f", delta),
+		"Change %": fmt.Sprintf("%.2f %%", perc),
+		"Volume":   fmt.Sprintf("%#v", bar.Volume),
 	}
 
+	printer := message.NewPrinter(language.English)
 	fmtStr := "```\n"
+
 	for _, k := range stringOrder {
-		fmtStr += fmt.Sprintf("%-10s %-20s\n", k, outputMap[k])
+		if k == "Volume" {
+			i, _ := strconv.Atoi(outputMap[k])
+			fmtStr += printer.Sprintf("%-10s %d\n", k, i)
+		} else {
+			fmtStr += fmt.Sprintf("%-10s %-20s\n", k, outputMap[k])
+		}
 	}
+
+	fmtStr += "```\n"
+
+	return fmtStr
+}
+
+// FormatStock TODO: @doc
+func FormatStock(quote *iex.Quote, bar struct {
+	Time   int64   `json:"t"`
+	Open   float32 `json:"o"`
+	High   float32 `json:"h"`
+	Low    float32 `json:"l"`
+	Close  float32 `json:"c"`
+	Volume int32   `json:"v"`
+}) string {
+	stringOrder := []string{
+		"Symbol",
+		"Company Name",
+		"Current",
+		"Open",
+		"High",
+		"Low",
+		"Close",
+		"Change % (1 day)",
+		"Delta",
+		"Volume",
+	}
+
+	var current float64
+	var changePercent float64
+
+	if outsideNormalTradingHours() {
+		current = quote.ExtendedPrice
+		changePercent = quote.ExtendedChangePercent
+	} else {
+		current = quote.LatestPrice
+		changePercent = quote.ChangePercent
+	}
+
+	delta := Round(current - float64(bar.Open))
+
+	outputMap := map[string]string{
+		"Symbol":           quote.Symbol,
+		"Company Name":     quote.CompanyName,
+		"Current":          fmt.Sprintf("%.2f", current),
+		"Open":             fmt.Sprintf("%.2f", bar.Open),
+		"High":             fmt.Sprintf("%.2f", bar.High),
+		"Low":              fmt.Sprintf("%.2f", bar.Low),
+		"Close":            fmt.Sprintf("%.2f", bar.Close),
+		"Change % (1 day)": fmt.Sprintf("%.3f %%", changePercent),
+		"Delta":            fmt.Sprintf("%.2f", delta),
+		"Volume":           fmt.Sprintf("%d", quote.LatestVolume),
+	}
+
+	printer := message.NewPrinter(language.English)
+	fmtStr := "```\n"
+
+	for _, k := range stringOrder {
+		if k == "Volume" {
+			i, _ := strconv.Atoi(outputMap[k])
+			fmtStr += printer.Sprintf("%-17s %d\n", k, i)
+		} else {
+			fmtStr += fmt.Sprintf("%-17s %-20s\n", k, outputMap[k])
+		}
+	}
+
 	fmtStr += "```\n"
 
 	return fmtStr

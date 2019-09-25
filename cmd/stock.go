@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -11,7 +12,7 @@ import (
 	"net/http"
 )
 
-const dataURL string = "https://data.alpaca.markets/v1/bars/1Min"
+const dataURL string = "https://data.alpaca.markets/v1/bars/day"
 
 // NewStockCommand TODO: @doc
 func NewStockCommand() *Command {
@@ -35,6 +36,19 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 	ticker := strings.ToUpper(slice[1])
 
 	logger.Info("Fetching stock info for " + ticker)
+	quote, err := iexClient.Quote(ticker, struct {
+		DisplayPercent bool `url:"displayPercent,omitempty"`
+	}{true})
+	if err != nil {
+		rw.Write([]byte(err.Error()))
+		return
+	}
+	if quote == nil {
+		msg := fmt.Sprintf("nil quote from ticker: %s", ticker)
+		logger.Trace(msg)
+		rw.Write([]byte(msg))
+		return
+	}
 	req, err := http.NewRequest(http.MethodGet, dataURL, nil)
 	if err != nil {
 		rw.Write([]byte(err.Error()))
@@ -78,7 +92,7 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 	}
 
 	bar := data[ticker][0]
-	message := util.FormatBar(bar, ticker)
+	response := util.FormatStock(quote, bar)
 
-	rw.Write([]byte(message))
+	rw.Write([]byte(response))
 }
