@@ -91,7 +91,7 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 		return
 	}
 
-	bar := data[ticker][0]
+	bar := data[ticker][len(data[ticker])-1]
 	response := util.FormatStock(quote, bar)
 
 	rw.Write([]byte(response))

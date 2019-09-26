@@ -163,8 +163,8 @@ func FormatStock(quote *iex.Quote, bar struct {
 	var changePercent float64
 
 	if outsideNormalTradingHours() {
-		current = quote.ExtendedPrice
-		changePercent = quote.ExtendedChangePercent
+		current = float64(bar.Close)
+		changePercent = float64((bar.Close - bar.Open) / bar.Open * 100)
 	} else {
 		current = quote.LatestPrice
 		changePercent = quote.ChangePercent
