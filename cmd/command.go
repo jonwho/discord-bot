@@ -10,7 +10,7 @@ import (
 	"github.com/alpacahq/alpaca-trade-api-go/alpaca"
 	"github.com/alpacahq/alpaca-trade-api-go/common"
 	"github.com/go-redis/redis"
-	iex "github.com/jonwho/go-iex"
+	iex "github.com/jonwho/go-iex/v2"
 	"github.com/robfig/cron"
 )
 

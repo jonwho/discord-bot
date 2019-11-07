@@ -3,7 +3,7 @@ package util
 import (
 	"strings"
 
-	iex "github.com/jonwho/go-iex"
+	iex "github.com/jonwho/go-iex/v2"
 )
 
 // Levenshtein compute the edit-distance aka cost between the two strings

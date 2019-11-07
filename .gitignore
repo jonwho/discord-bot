@@ -1,6 +1,5 @@
 .env
 bin/
-vendor/
 redis_data/
 discord-bot
 *.swp

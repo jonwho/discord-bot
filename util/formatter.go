@@ -9,7 +9,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
-	iex "github.com/jonwho/go-iex"
+	iex "github.com/jonwho/go-iex/v2"
 )
 
 var (
