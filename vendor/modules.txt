@@ -1,19 +1,21 @@
+# github.com/BryanSLam/discordbot v0.0.0-00010101000000-000000000000 => ./
+github.com/BryanSLam/discordbot
 # github.com/PuerkitoBio/goquery v1.5.0
 github.com/PuerkitoBio/goquery
-# github.com/alpacahq/alpaca-trade-api-go v1.3.6
+# github.com/alpacahq/alpaca-trade-api-go v1.3.8
 github.com/alpacahq/alpaca-trade-api-go/alpaca
 github.com/alpacahq/alpaca-trade-api-go/common
 # github.com/andybalholm/cascadia v1.0.0
 github.com/andybalholm/cascadia
-# github.com/antchfx/htmlquery v1.0.0
+# github.com/antchfx/htmlquery v1.2.0
 github.com/antchfx/htmlquery
-# github.com/antchfx/xmlquery v1.0.0
+# github.com/antchfx/xmlquery v1.2.0
 github.com/antchfx/xmlquery
-# github.com/antchfx/xpath v1.0.0
+# github.com/antchfx/xpath v1.1.1
 github.com/antchfx/xpath
-# github.com/bwmarrin/discordgo v0.19.0
+# github.com/bwmarrin/discordgo v0.20.1
 github.com/bwmarrin/discordgo
-# github.com/go-redis/redis v6.15.5+incompatible
+# github.com/go-redis/redis v6.15.6+incompatible
 github.com/go-redis/redis
 github.com/go-redis/redis/internal
 github.com/go-redis/redis/internal/consistenthash
@@ -34,11 +36,13 @@ github.com/gobwas/glob/util/strings
 github.com/gocolly/colly
 github.com/gocolly/colly/debug
 github.com/gocolly/colly/storage
-# github.com/golang/protobuf v1.3.2
+# github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9
+github.com/golang/groupcache/lru
+# github.com/golang/protobuf v1.3.1
 github.com/golang/protobuf/proto
 # github.com/google/go-querystring v1.0.0
 github.com/google/go-querystring/query
-# github.com/gorilla/websocket v1.4.1
+# github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
 # github.com/jonwho/go-iex/v2 v2.7.1
 github.com/jonwho/go-iex/v2
@@ -52,17 +56,17 @@ github.com/saintfish/chardet
 github.com/shopspring/decimal
 # github.com/temoto/robotstxt v1.1.1
 github.com/temoto/robotstxt
-# golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
+# golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/nacl/secretbox
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/salsa20/salsa
-# golang.org/x/net v0.0.0-20190916140828-c8589233b77d
+# golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 golang.org/x/net/context
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/sys v0.0.0-20190916202348-b4ddaad3f8a3
+# golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
 golang.org/x/sys/cpu
 # golang.org/x/text v0.3.2
 golang.org/x/text/encoding
@@ -90,7 +94,7 @@ golang.org/x/text/message
 golang.org/x/text/message/catalog
 golang.org/x/text/runes
 golang.org/x/text/transform
-# google.golang.org/appengine v1.6.2
+# google.golang.org/appengine v1.6.5
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/base
 google.golang.org/appengine/internal/datastore

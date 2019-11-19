@@ -67,9 +67,26 @@ func (n *Node) InnerText() string {
 	return buf.String()
 }
 
-func outputXML(buf *bytes.Buffer, n *Node) {
+func (n *Node) sanitizedData(preserveSpaces bool) string {
+	if preserveSpaces {
+		return strings.Trim(n.Data, "\n\t")
+	}
+	return strings.TrimSpace(n.Data)
+}
+
+func calculatePreserveSpaces(n *Node, pastValue bool) bool {
+	if attr := n.SelectAttr("xml:space"); attr == "preserve" {
+		return true
+	} else if attr == "default" {
+		return false
+	}
+	return pastValue
+}
+
+func outputXML(buf *bytes.Buffer, n *Node, preserveSpaces bool) {
+	preserveSpaces = calculatePreserveSpaces(n, preserveSpaces)
 	if n.Type == TextNode {
-		xml.EscapeText(buf, []byte(strings.TrimSpace(n.Data)))
+		xml.EscapeText(buf, []byte(n.sanitizedData(preserveSpaces)))
 		return
 	}
 	if n.Type == CommentNode {
@@ -90,10 +107,13 @@ func outputXML(buf *bytes.Buffer, n *Node) {
 
 	for _, attr := range n.Attr {
 		if attr.Name.Space != "" {
-			buf.WriteString(fmt.Sprintf(` %s:%s="%s"`, attr.Name.Space, attr.Name.Local, attr.Value))
+			buf.WriteString(fmt.Sprintf(` %s:%s=`, attr.Name.Space, attr.Name.Local))
 		} else {
-			buf.WriteString(fmt.Sprintf(` %s="%s"`, attr.Name.Local, attr.Value))
+			buf.WriteString(fmt.Sprintf(` %s=`, attr.Name.Local))
 		}
+		buf.WriteByte(34) // "
+		xml.EscapeText(buf, []byte(attr.Value))
+		buf.WriteByte(34)
 	}
 	if n.Type == DeclarationNode {
 		buf.WriteString("?>")
@@ -101,7 +121,7 @@ func outputXML(buf *bytes.Buffer, n *Node) {
 		buf.WriteString(">")
 	}
 	for child := n.FirstChild; child != nil; child = child.NextSibling {
-		outputXML(buf, child)
+		outputXML(buf, child, preserveSpaces)
 	}
 	if n.Type != DeclarationNode {
 		if n.Prefix == "" {
@@ -116,10 +136,10 @@ func outputXML(buf *bytes.Buffer, n *Node) {
 func (n *Node) OutputXML(self bool) string {
 	var buf bytes.Buffer
 	if self {
-		outputXML(&buf, n)
+		outputXML(&buf, n, false)
 	} else {
 		for n := n.FirstChild; n != nil; n = n.NextSibling {
-			outputXML(&buf, n)
+			outputXML(&buf, n, false)
 		}
 	}
 
@@ -257,6 +277,11 @@ func parse(r io.Reader) (*Node, error) {
 				addSibling(prev, node)
 			} else if level > prev.level {
 				addChild(prev, node)
+			} else if level < prev.level {
+				for i := prev.level - level; i > 1; i-- {
+					prev = prev.Parent
+				}
+				addSibling(prev.Parent, node)
 			}
 		case xml.Comment:
 			node := &Node{Type: CommentNode, Data: string(tok), level: level}

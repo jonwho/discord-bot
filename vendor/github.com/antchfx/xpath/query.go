@@ -22,6 +22,17 @@ type query interface {
 	Clone() query
 }
 
+// nopQuery is an empty query that always return nil for any query.
+type nopQuery struct {
+	query
+}
+
+func (nopQuery) Select(iterator) NodeNavigator { return nil }
+
+func (nopQuery) Evaluate(iterator) interface{} { return nil }
+
+func (nopQuery) Clone() query { return nopQuery{} }
+
 // contextQuery is returns current node on the iterator object query.
 type contextQuery struct {
 	count int
@@ -232,11 +243,14 @@ func (d *descendantQuery) Select(t iterator) NodeNavigator {
 			}
 			node = node.Copy()
 			level := 0
+			positmap := make(map[int]int)
 			first := true
 			d.iterator = func() NodeNavigator {
 				if first && d.Self {
 					first = false
 					if d.Predicate(node) {
+						d.posit = 1
+						positmap[level] = 1
 						return node
 					}
 				}
@@ -244,6 +258,7 @@ func (d *descendantQuery) Select(t iterator) NodeNavigator {
 				for {
 					if node.MoveToChild() {
 						level++
+						positmap[level] = 0
 					} else {
 						for {
 							if level == 0 {
@@ -257,6 +272,8 @@ func (d *descendantQuery) Select(t iterator) NodeNavigator {
 						}
 					}
 					if d.Predicate(node) {
+						positmap[level]++
+						d.posit = positmap[level]
 						return node
 					}
 				}
@@ -264,7 +281,6 @@ func (d *descendantQuery) Select(t iterator) NodeNavigator {
 		}
 
 		if node := d.iterator(); node != nil {
-			d.posit++
 			return node
 		}
 		d.iterator = nil
@@ -292,6 +308,7 @@ func (d *descendantQuery) Clone() query {
 
 // followingQuery is an XPath following node query.(following::*|following-sibling::*)
 type followingQuery struct {
+	posit    int
 	iterator func() NodeNavigator
 
 	Input     query
@@ -302,6 +319,7 @@ type followingQuery struct {
 func (f *followingQuery) Select(t iterator) NodeNavigator {
 	for {
 		if f.iterator == nil {
+			f.posit = 0
 			node := f.Input.Select(t)
 			if node == nil {
 				return nil
@@ -314,12 +332,13 @@ func (f *followingQuery) Select(t iterator) NodeNavigator {
 							return nil
 						}
 						if f.Predicate(node) {
+							f.posit++
 							return node
 						}
 					}
 				}
 			} else {
-				var q query // descendant query
+				var q *descendantQuery // descendant query
 				f.iterator = func() NodeNavigator {
 					for {
 						if q == nil {
@@ -336,6 +355,7 @@ func (f *followingQuery) Select(t iterator) NodeNavigator {
 							t.Current().MoveTo(node)
 						}
 						if node := q.Select(t); node != nil {
+							f.posit = q.posit
 							return node
 						}
 						q = nil
@@ -362,6 +382,10 @@ func (f *followingQuery) Test(n NodeNavigator) bool {
 
 func (f *followingQuery) Clone() query {
 	return &followingQuery{Input: f.Input.Clone(), Sibling: f.Sibling, Predicate: f.Predicate}
+}
+
+func (f *followingQuery) position() int {
+	return f.posit
 }
 
 // precedingQuery is an XPath preceding node query.(preceding::*)
@@ -504,6 +528,7 @@ func (s *selfQuery) Clone() query {
 type filterQuery struct {
 	Input     query
 	Predicate query
+	posit     int
 }
 
 func (f *filterQuery) do(t iterator) bool {
@@ -514,8 +539,8 @@ func (f *filterQuery) do(t iterator) bool {
 	case reflect.String:
 		return len(val.String()) > 0
 	case reflect.Float64:
-		pt := float64(getNodePosition(f.Input))
-		return int(val.Float()) == int(pt)
+		pt := getNodePosition(f.Input)
+		return int(val.Float()) == pt
 	default:
 		if q, ok := f.Predicate.(query); ok {
 			return q.Select(t) != nil
@@ -524,19 +549,26 @@ func (f *filterQuery) do(t iterator) bool {
 	return false
 }
 
+func (f *filterQuery) position() int {
+	return f.posit
+}
+
 func (f *filterQuery) Select(t iterator) NodeNavigator {
+
 	for {
+
 		node := f.Input.Select(t)
 		if node == nil {
 			return node
 		}
 		node = node.Copy()
-		//fmt.Println(node.LocalName())
 
 		t.Current().MoveTo(node)
 		if f.do(t) {
+			f.posit++
 			return node
 		}
+		f.posit = 0
 	}
 }
 
@@ -731,7 +763,8 @@ type unionQuery struct {
 
 func (u *unionQuery) Select(t iterator) NodeNavigator {
 	if u.iterator == nil {
-		var m = make(map[uint64]NodeNavigator)
+		var list []NodeNavigator
+		var m = make(map[uint64]bool)
 		root := t.Current().Copy()
 		for {
 			node := u.Left.Select(t)
@@ -740,7 +773,8 @@ func (u *unionQuery) Select(t iterator) NodeNavigator {
 			}
 			code := getHashCode(node.Copy())
 			if _, ok := m[code]; !ok {
-				m[code] = node.Copy()
+				m[code] = true
+				list = append(list, node.Copy())
 			}
 		}
 		t.Current().MoveTo(root)
@@ -751,16 +785,11 @@ func (u *unionQuery) Select(t iterator) NodeNavigator {
 			}
 			code := getHashCode(node.Copy())
 			if _, ok := m[code]; !ok {
-				m[code] = node.Copy()
+				m[code] = true
+				list = append(list, node.Copy())
 			}
 		}
-		list := make([]NodeNavigator, len(m))
 		var i int
-		for _, v := range m {
-			list[i] = v
-			i++
-		}
-		i = 0
 		u.iterator = func() NodeNavigator {
 			if i >= len(list) {
 				return nil

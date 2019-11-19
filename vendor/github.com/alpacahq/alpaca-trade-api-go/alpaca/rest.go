@@ -102,6 +102,97 @@ func (c *Client) GetAccount() (*Account, error) {
 	return account, nil
 }
 
+// GetConfigs returns the current account configurations
+func (c *Client) GetAccountConfigurations() (*AccountConfigurations, error) {
+	u, err := url.Parse(fmt.Sprintf("%s/%s/account/configurations", base, apiVersion))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.get(u)
+	if err != nil {
+		return nil, err
+	}
+
+	configs := &AccountConfigurations{}
+
+	if err = unmarshal(resp, configs); err != nil {
+		return nil, err
+	}
+
+	return configs, nil
+}
+
+// EditConfigs patches the account configs
+func (c *Client) UpdateAccountConfigurations(newConfigs AccountConfigurationsRequest) (*AccountConfigurations, error) {
+	u, err := url.Parse(fmt.Sprintf("%s/%s/account/configurations", base, apiVersion))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.patch(u, newConfigs)
+	if err != nil {
+		return nil, err
+	}
+
+	configs := &AccountConfigurations{}
+
+	if err = unmarshal(resp, configs); err != nil {
+		return nil, err
+	}
+
+	return configs, nil
+}
+
+func (c *Client) GetAccountActivities(activityType *string, opts *AccountActivitiesRequest) ([]AccountActvity, error) {
+	var u *url.URL
+	var err error
+	if activityType == nil {
+		u, err = url.Parse(fmt.Sprintf("%s/%s/account/activities", base, apiVersion))
+	} else {
+		u, err = url.Parse(fmt.Sprintf("%s/%s/account/activities/%s", base, apiVersion, *activityType))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	q := u.Query()
+	if opts != nil {
+		if opts.ActivityTypes != nil {
+			q.Set("activity_types", strings.Join(*opts.ActivityTypes, ","))
+		}
+		if opts.Date != nil {
+			q.Set("date", opts.Date.String())
+		}
+		if opts.Until != nil {
+			q.Set("until", opts.Until.String())
+		}
+		if opts.After != nil {
+			q.Set("after", opts.After.String())
+		}
+		if opts.Direction != nil {
+			q.Set("direction", *opts.Direction)
+		}
+		if opts.PageSize != nil {
+			q.Set("page_size", string(*opts.PageSize))
+		}
+	}
+
+	u.RawQuery = q.Encode()
+
+	resp, err := c.get(u)
+	if err != nil {
+		return nil, err
+	}
+
+	activities := []AccountActvity{}
+
+	if err = unmarshal(resp, &activities); err != nil {
+		return nil, err
+	}
+	return activities, nil
+}
+
 // ListPositions lists the account's open positions.
 func (c *Client) ListPositions() ([]Position, error) {
 	u, err := url.Parse(fmt.Sprintf("%s/%s/positions", base, apiVersion))
@@ -315,6 +406,27 @@ func (c *Client) GetOrder(orderID string) (*Order, error) {
 	return order, nil
 }
 
+// ReplaceOrder submits a request to replace an order by id
+func (c *Client) ReplaceOrder(orderID string, req ReplaceOrderRequest) (*Order, error) {
+	u, err := url.Parse(fmt.Sprintf("%s/%s/orders/%s", base, apiVersion, orderID))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.patch(u, req)
+	if err != nil {
+		return nil, err
+	}
+
+	order := &Order{}
+
+	if err = unmarshal(resp, order); err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
 // CancelOrder submits a request to cancel an open order.
 func (c *Client) CancelOrder(orderID string) error {
 	u, err := url.Parse(fmt.Sprintf("%s/%s/orders/%s", base, apiVersion, orderID))
@@ -456,6 +568,22 @@ func GetAccount() (*Account, error) {
 	return DefaultClient.GetAccount()
 }
 
+// GetAccountConfigurations returns the account configs
+// using the default Alpaca client.
+func GetAccountConfigurations() (*AccountConfigurations, error) {
+	return DefaultClient.GetAccountConfigurations()
+}
+
+// UpdateAccountConfigurations changes the account configs and returns the
+// new configs using the default Alpaca client
+func UpdateAccountConfigurations(newConfigs AccountConfigurationsRequest) (*AccountConfigurations, error) {
+	return DefaultClient.UpdateAccountConfigurations(newConfigs)
+}
+
+func GetAccountActivities(activityType *string, opts *AccountActivitiesRequest) ([]AccountActvity, error) {
+	return DefaultClient.GetAccountActivities(activityType, opts)
+}
+
 // ListPositions lists the account's open positions
 // using the default Alpaca client.
 func ListPositions() ([]Position, error) {
@@ -497,6 +625,12 @@ func PlaceOrder(req PlaceOrderRequest) (*Order, error) {
 // `orderID` using the default Alpaca client.
 func GetOrder(orderID string) (*Order, error) {
 	return DefaultClient.GetOrder(orderID)
+}
+
+// ReplaceOrder changes an order by order id
+// using the default Alpaca client.
+func ReplaceOrder(orderID string, req ReplaceOrderRequest) (*Order, error) {
+	return DefaultClient.ReplaceOrder(orderID, req)
 }
 
 // CancelOrder submits a request to cancel an open order with
@@ -553,6 +687,21 @@ func (c *Client) post(u *url.URL, data interface{}) (*http.Response, error) {
 
 	return do(c, req)
 }
+
+func (c *Client) patch(u *url.URL, data interface{}) (*http.Response, error) {
+	buf, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, u.String(), bytes.NewReader(buf))
+	if err != nil {
+		return nil, err
+	}
+
+	return do(c, req)
+}
+
 func (c *Client) delete(u *url.URL) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodDelete, u.String(), nil)
 	if err != nil {
