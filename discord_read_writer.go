@@ -1,4 +1,4 @@
-package util
+package discordbot
 
 import (
 	"io"
@@ -69,19 +69,4 @@ func (w *DiscordWriter) Write(b []byte) (n int, err error) {
 	}
 
 	return len(b), nil
-}
-
-// GetSession TODO: @doc
-func (drw DiscordReadWriter) GetSession() *dg.Session {
-	return drw.DiscordReader.session
-}
-
-// GetMessageCreate TODO: @doc
-func (drw DiscordReadWriter) GetMessageCreate() *dg.MessageCreate {
-	return drw.DiscordReader.messageCreate
-}
-
-// GetChannelID TODO: @doc
-func (drw DiscordReadWriter) GetChannelID() string {
-	return drw.DiscordReader.channelID
 }

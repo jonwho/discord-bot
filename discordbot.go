@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
+	// "github.com/BryanSLam/discord-bot/botcommands"
 	"github.com/BryanSLam/discord-bot/commands"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
@@ -15,13 +18,20 @@ import (
 
 // Bot data container for bot
 type Bot struct {
-	dg *dg.Session
+	*dg.Session
+	logger *log.Logger
 }
 
 // Command interface
 type Command interface {
 	Execute(ctx context.Context, rw io.ReadWriter) error
 }
+
+// MessageCreateHandlerFunc handler for event MESSAGE_CREATE
+type MessageCreateHandlerFunc func(s *dg.Session, m *dg.MessageCreate)
+
+// Option modifiers on bot initialization
+type Option func(b *Bot) error
 
 var (
 	commandRegex    = regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*$`)
@@ -51,15 +61,85 @@ func init() {
 }
 
 // New return new bot service
-func New(token string) (*dg.Session, error) {
+func New(token string, options ...Option) (*Bot, error) {
 	session, err := dg.New("Bot " + token)
 	if err != nil {
 		return nil, err
 	}
 
+	bot := &Bot{
+		Session: session,
+	}
+
+	for _, option := range options {
+		if err := option(bot); err != nil {
+			return nil, err
+		}
+	}
+
 	// Register handlers to the session
-	session.AddHandler(commander)
-	return session, err
+	bot.Session.AddHandler(commander)
+	bot.Session.AddHandler(bot.userOnly(bot.HandleStock()))
+	return bot, err
+}
+
+// WithLoggers set the writers for logging
+func WithLoggers(writers ...io.Writer) Option {
+	return func(b *Bot) error {
+		w := io.MultiWriter(writers...)
+		logger := log.New(w, "BOT LOG", log.LstdFlags)
+		b.logger = logger
+		return nil
+	}
+}
+
+// Open starts a discord session
+func (b *Bot) Open() error {
+	err := b.Session.Open()
+	return err
+}
+
+// Close closes a discord session
+func (b *Bot) Close() {
+	b.Session.Close()
+}
+
+func (b *Bot) userOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Session, _ *dg.MessageCreate) {
+	log.Println("Called userOnly")
+	return func(s *dg.Session, m *dg.MessageCreate) {
+		log.Println("Enter userOnly func return")
+		if m.Author.ID == s.State.User.ID {
+			log.Println("Bot and Author matched")
+			return
+		}
+		h(s, m)
+	}
+}
+
+// HandleStock is the bot command to call the stock command
+// design:
+// 1. use a handler to decide if it can call the appropriate command
+// 2. if the message matches the pattern then go ahead and make the call
+//    to the command
+func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
+	log.Println("Enter HandleStock")
+
+	// if you need a closure set it up here before the func below
+	return func(s *dg.Session, m *dg.MessageCreate) {
+		log.Println("In HandleStock returned func")
+		dr := NewDiscordReader(s, m, "")
+		dw := NewDiscordWriter(s, m, "")
+		drw := NewDiscordReadWriter(dr, dw)
+		drw.Write([]byte("jontest"))
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+		defer cancel()
+		// read from m and decide if we can call the command
+		// symbol := "todo"
+		// b.logger.Println("Requesting stock info for ticker", symbol)
+		// stock := &botcommands.Stock{}
+		// stock.Execute(ctx, drw)
+	}
 }
 
 // commander return pattern matching handler
@@ -71,11 +151,11 @@ func commander(s *dg.Session, m *dg.MessageCreate) {
 			return
 		}
 
-		dr := util.NewDiscordReader(s, m, "")
-		dw := util.NewDiscordWriter(s, m, "")
-		drw := util.NewDiscordReadWriter(dr, dw)
+		dr := NewDiscordReader(s, m, "")
+		dw := NewDiscordWriter(s, m, "")
+		drw := NewDiscordReadWriter(dr, dw)
 
-		logWriter := util.NewDiscordWriter(s, nil, botLogChannelID)
+		logWriter := NewDiscordWriter(s, nil, botLogChannelID)
 		logger := util.NewLogger(logWriter)
 
 		for _, c := range cmds {

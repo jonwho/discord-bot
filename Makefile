@@ -17,4 +17,4 @@ test:
 bash:
 	$(DC) run bot bash
 
-.PHONY: all up down test
+.PHONY: all build up down test bash
