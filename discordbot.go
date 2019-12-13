@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
 	"strings"
 	"time"
 
-	// "github.com/BryanSLam/discord-bot/botcommands"
+	"github.com/BryanSLam/discord-bot/botcommands"
 	"github.com/BryanSLam/discord-bot/commands"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
@@ -105,11 +106,8 @@ func (b *Bot) Close() {
 }
 
 func (b *Bot) userOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Session, _ *dg.MessageCreate) {
-	log.Println("Called userOnly")
 	return func(s *dg.Session, m *dg.MessageCreate) {
-		log.Println("Enter userOnly func return")
 		if m.Author.ID == s.State.User.ID {
-			log.Println("Bot and Author matched")
 			return
 		}
 		h(s, m)
@@ -117,28 +115,40 @@ func (b *Bot) userOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Se
 }
 
 // HandleStock is the bot command to call the stock command
-// design:
-// 1. use a handler to decide if it can call the appropriate command
-// 2. if the message matches the pattern then go ahead and make the call
-//    to the command
 func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
-	log.Println("Enter HandleStock")
+	token := os.Getenv("IEX_SECRET_TOKEN")
+	stock := botcommands.NewStock(token)
+	stockRegex := regexp.MustCompile(`(?i)^\$[\w.]+$`)
 
-	// if you need a closure set it up here before the func below
 	return func(s *dg.Session, m *dg.MessageCreate) {
-		log.Println("In HandleStock returned func")
-		dr := NewDiscordReader(s, m, "")
-		dw := NewDiscordWriter(s, m, "")
-		drw := NewDiscordReadWriter(dr, dw)
-		drw.Write([]byte("jontest"))
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
-		defer cancel()
-		// read from m and decide if we can call the command
-		// symbol := "todo"
-		// b.logger.Println("Requesting stock info for ticker", symbol)
-		// stock := &botcommands.Stock{}
-		// stock.Execute(ctx, drw)
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					b.logger.Println([]byte(util.MentionMaintainers(maintainers) + " an error has occurred"))
+					b.logger.Println(err)
+				}
+			}()
+
+			dr := NewDiscordReader(s, m, "")
+			dw := NewDiscordWriter(s, m, "")
+			drw := NewDiscordReadWriter(dr, dw)
+
+			buf, err := ioutil.ReadAll(drw)
+			if err != nil {
+				drw.Write([]byte(err.Error()))
+				return
+			}
+
+			if !stockRegex.MatchString(string(buf)) {
+				return
+			}
+
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+			defer cancel()
+
+			stock.Execute(ctx, drw)
+		}()
 	}
 }
 
