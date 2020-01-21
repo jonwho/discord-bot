@@ -1,5 +1,0 @@
-*.swp
-*.swo
-.env
-coverage.out
-coverage_badge.png

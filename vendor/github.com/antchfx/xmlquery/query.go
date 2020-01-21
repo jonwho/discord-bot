@@ -57,6 +57,7 @@ func getCurrentNode(it *xpath.NodeIterator) *Node {
 			Data: n.Value(),
 		}
 		return &Node{
+			Parent:     n.curr,
 			Type:       AttributeNode,
 			Data:       n.LocalName(),
 			FirstChild: childNode,
@@ -186,6 +187,10 @@ func (x *NodeNavigator) Prefix() string {
 		return ""
 	}
 	return x.curr.Prefix
+}
+
+func (x *NodeNavigator) NamespaceURL() string {
+	return x.curr.NamespaceURI
 }
 
 func (x *NodeNavigator) Value() string {

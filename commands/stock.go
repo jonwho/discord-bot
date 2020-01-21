@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"regexp"
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
-	"net/http"
+	iex "github.com/jonwho/go-iex/v3"
 )
 
 const dataURL string = "https://data.alpaca.markets/v1/bars/day"
@@ -36,9 +37,7 @@ func Stock(rw io.ReadWriter, logger *util.Logger, m map[string]interface{}) {
 	ticker := strings.ToUpper(slice[1])
 
 	logger.Info("Fetching stock info for " + ticker)
-	quote, err := iexClient.Quote(ticker, struct {
-		DisplayPercent bool `url:"displayPercent,omitempty"`
-	}{true})
+	quote, err := iexClient.Quote(ticker, &iex.QuoteQueryParams{DisplayPercent: true})
 	if err != nil {
 		rw.Write([]byte(err.Error()))
 		return

@@ -59,6 +59,7 @@ type Order struct {
 	FilledAvgPrice *decimal.Decimal `json:"filled_avg_price"`
 	StopPrice      *decimal.Decimal `json:"stop_price"`
 	Status         string           `json:"status"`
+	Legs           *[]Order         `json:"legs"`
 }
 
 type Position struct {
@@ -190,6 +191,24 @@ type PlaceOrderRequest struct {
 	LimitPrice    *decimal.Decimal `json:"limit_price"`
 	StopPrice     *decimal.Decimal `json:"stop_price"`
 	ClientOrderID string           `json:"client_order_id"`
+	OrderClass    OrderClass       `json:"order_class"`
+	TakeProfit    *TakeProfit      `json:"take_profit"`
+	StopLoss      *StopLoss        `json:"stop_loss"`
+}
+
+type TakeProfit struct {
+	LimitPrice *decimal.Decimal `json:"limit_price"`
+}
+
+type StopLoss struct {
+	LimitPrice *decimal.Decimal `json:"limit_price"`
+	StopPrice  *decimal.Decimal `json:"stop_price"`
+}
+
+type OrderAttributes struct {
+	TakeProfitLimitPrice *decimal.Decimal `json:"take_profit_limit_price,omitempty"`
+	StopLossStopPrice    *decimal.Decimal `json:"stop_loss_stop_price,omitempty"`
+	StopLossLimitPrice   *decimal.Decimal `json:"stop_loss_limit_price,omitempty"`
 }
 
 type ReplaceOrderRequest struct {
@@ -232,6 +251,13 @@ const (
 	StopLimit     OrderType = "stop_limit"
 	MarketOnClose OrderType = "market_on_close"
 	LimitOnClose  OrderType = "limit_on_close"
+)
+
+type OrderClass string
+
+const (
+	Bracket OrderClass = "bracket"
+	Simple  OrderClass = "simple"
 )
 
 type TimeInForce string

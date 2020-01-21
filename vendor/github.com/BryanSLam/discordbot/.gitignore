@@ -1,8 +1,0 @@
-.env
-redis_data/
-discord-bot
-*.swp
-*.swo
-tags
-cmd/discord-bot/discord-bot
-SCRATCH.md
