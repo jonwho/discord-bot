@@ -80,7 +80,7 @@ func New(token string, options ...Option) (*Bot, error) {
 
 	// Register handlers to the session
 	bot.Session.AddHandler(Commander)
-	bot.Session.AddHandler(bot.userOnly(bot.HandleStock()))
+	bot.Session.AddHandler(bot.UserOnly(bot.HandleStock()))
 	return bot, err
 }
 
@@ -105,7 +105,7 @@ func (b *Bot) Close() {
 	b.Session.Close()
 }
 
-func (b *Bot) userOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Session, _ *dg.MessageCreate) {
+func (b *Bot) UserOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Session, _ *dg.MessageCreate) {
 	return func(s *dg.Session, m *dg.MessageCreate) {
 		if m.Author.ID == s.State.User.ID {
 			return

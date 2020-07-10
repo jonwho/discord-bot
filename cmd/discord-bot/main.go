@@ -30,16 +30,19 @@ func init() {
 
 func main() {
 	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + token)
+	session, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)
 	}
 
+	bot := &dbot.Bot{Session: session}
+
 	// Register handlers for discordgo
-	dg.AddHandler(dbot.Commander)
+	bot.Session.AddHandler(dbot.Commander)
+	bot.Session.AddHandler(bot.UserOnly(bot.HandleStock()))
 
 	// Open a websocket connection to Discord and begin listening.
-	err = dg.Open()
+	err = bot.Open()
 	if err != nil {
 		log.Fatalln("error opening connection,", err)
 		return
@@ -52,5 +55,5 @@ func main() {
 	<-sc
 
 	// Cleanly close down the Discord session.
-	dg.Close()
+	bot.Close()
 }
