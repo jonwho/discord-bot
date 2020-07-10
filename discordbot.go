@@ -2,13 +2,11 @@ package discordbot
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/BryanSLam/discord-bot/botcommands"
@@ -20,34 +18,33 @@ import (
 // Bot data container for bot
 type Bot struct {
 	*dg.Session
-	logger *log.Logger
-}
+	logger      *log.Logger
+	maintainers []string
 
-// Command interface
-type Command interface {
-	Execute(ctx context.Context, rw io.ReadWriter) error
+	// TODO: thinking about deprecating these
+	cmds            []*commands.Command
+	botLogChannelID string
 }
-
-// MessageCreateHandlerFunc handler for event MESSAGE_CREATE
-type MessageCreateHandlerFunc func(s *dg.Session, m *dg.MessageCreate)
 
 // Option modifiers on bot initialization
 type Option func(b *Bot) error
 
-var (
-	commandRegex    = regexp.MustCompile(`(?i)^![\w]+[\w ".]*[ 0-9/]*$`)
-	cmds            []*commands.Command
-	maintainers     []string
-	botLogChannelID string
-)
+// New return new bot service
+func New(token string, options ...Option) (*Bot, error) {
+	session, err := dg.New("Bot " + token)
+	if err != nil {
+		return nil, err
+	}
 
-// TODO: discourage the use of init
-// TOOD: use closures or sync.Once to get around one time setup
-func init() {
-	maintainers = strings.Split(os.Getenv("MAINTAINERS"), ",")
-	botLogChannelID = os.Getenv("BOT_LOG_CHANNEL_ID")
+	bot := &Bot{Session: session}
+	for _, option := range options {
+		if err := option(bot); err != nil {
+			return nil, err
+		}
+	}
 
-	cmds = append(cmds,
+	// TODO: thinking about deprecating this style for botcommands style to isolate dependencies
+	bot.cmds = append(bot.cmds,
 		commands.NewPingCommand(),
 		commands.NewStockCommand(),
 		commands.NewErCommand(),
@@ -59,27 +56,9 @@ func init() {
 		commands.NewNewsCommand(),
 		commands.NewNextErCommand(),
 	)
-}
-
-// New return new bot service
-func New(token string, options ...Option) (*Bot, error) {
-	session, err := dg.New("Bot " + token)
-	if err != nil {
-		return nil, err
-	}
-
-	bot := &Bot{
-		Session: session,
-	}
-
-	for _, option := range options {
-		if err := option(bot); err != nil {
-			return nil, err
-		}
-	}
 
 	// Register handlers to the session
-	bot.Session.AddHandler(Commander)
+	bot.Session.AddHandler(bot.Commander)
 	bot.Session.AddHandler(bot.UserOnly(bot.HandleStock()))
 	return bot, err
 }
@@ -90,6 +69,22 @@ func WithLoggers(writers ...io.Writer) Option {
 		w := io.MultiWriter(writers...)
 		logger := log.New(w, "BOT LOG", log.LstdFlags)
 		b.logger = logger
+		return nil
+	}
+}
+
+// WithMaintainers set the maintainers for bot to be DM'd when an issue happens
+func WithMaintainers(maintainers []string) Option {
+	return func(b *Bot) error {
+		b.maintainers = maintainers
+		return nil
+	}
+}
+
+// WithBotLogChannelID set the bot log channel ID
+func WithBotLogChannelID(botLogChannelID string) Option {
+	return func(b *Bot) error {
+		b.botLogChannelID = botLogChannelID
 		return nil
 	}
 }
@@ -124,7 +119,7 @@ func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
 		go func() {
 			defer func() {
 				if err := recover(); err != nil {
-					b.logger.Println([]byte(util.MentionMaintainers(maintainers) + " an error has occurred"))
+					b.logger.Println([]byte(util.MentionMaintainers(b.maintainers) + " an error has occurred"))
 					b.logger.Println(err)
 				}
 			}()
@@ -149,45 +144,5 @@ func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
 
 			stock.Execute(ctx, drw)
 		}()
-	}
-}
-
-// Commander return pattern matching handler
-func Commander(s *dg.Session, m *dg.MessageCreate) {
-	if commandRegex.MatchString(m.Content) {
-		// Ignore all messages created by the bot itself
-		// This isn't required in this specific example but it's a good practice.
-		if m.Author.ID == s.State.User.ID {
-			return
-		}
-
-		dr := NewDiscordReader(s, m, "")
-		dw := NewDiscordWriter(s, m, "")
-		drw := NewDiscordReadWriter(dr, dw)
-
-		logWriter := NewDiscordWriter(s, nil, botLogChannelID)
-		logger := util.NewLogger(logWriter)
-
-		for _, c := range cmds {
-			if c.Match(m.Content) {
-				go func() {
-					defer func() {
-						if err := recover(); err != nil {
-							logger.Write([]byte(util.MentionMaintainers(maintainers) + " an error has occurred"))
-							logger.Warn(fmt.Sprintln("function", util.FuncName(c.Fn), "failed:", err))
-						}
-					}()
-
-					// TODO: use context and change command to an interface instead of struct
-					mm := map[string]interface{}{}
-					mm["messageCreate"] = m
-
-					c.Fn(drw, logger, mm)
-				}()
-				return
-			}
-		}
-
-		drw.Write([]byte("Invalid Command"))
 	}
 }

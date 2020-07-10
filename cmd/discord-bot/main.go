@@ -5,12 +5,16 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	dbot "github.com/BryanSLam/discord-bot"
 )
 
 func main() {
+	maintainers := strings.Split(os.Getenv("MAINTAINERS"), ",")
+	botLogChannelID := os.Getenv("BOT_LOG_CHANNEL_ID")
+
 	// Run the program with `go run main.go -t <token>`
 	// flag.Parse() will assign to token var
 	var token string
@@ -27,7 +31,11 @@ func main() {
 		log.Fatalln("Bot Token must be set")
 	}
 
-	bot, err := dbot.New(token)
+	bot, err := dbot.New(
+		token,
+		dbot.WithMaintainers(maintainers),
+		dbot.WithBotLogChannelID(botLogChannelID),
+	)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)
 	}
