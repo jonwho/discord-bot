@@ -8,17 +8,12 @@ import (
 	"syscall"
 
 	dbot "github.com/BryanSLam/discord-bot"
-	"github.com/bwmarrin/discordgo"
 )
 
-// Variables to initialize
-var (
-	token string
-)
-
-func init() {
+func main() {
 	// Run the program with `go run main.go -t <token>`
 	// flag.Parse() will assign to token var
+	var token string
 	flag.StringVar(&token, "t", "", "Bot Token")
 	flag.Parse()
 
@@ -26,20 +21,16 @@ func init() {
 	if token == "" {
 		token = os.Getenv("BOT_TOKEN")
 	}
-}
 
-func main() {
-	// Create a new Discord session using the provided bot token.
-	session, err := discordgo.New("Bot " + token)
+	// If still empty then that's no bueno
+	if token == "" {
+		log.Fatalln("Bot Token must be set")
+	}
+
+	bot, err := dbot.New(token)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)
 	}
-
-	bot := &dbot.Bot{Session: session}
-
-	// Register handlers for discordgo
-	bot.Session.AddHandler(dbot.Commander)
-	bot.Session.AddHandler(bot.UserOnly(bot.HandleStock()))
 
 	// Open a websocket connection to Discord and begin listening.
 	err = bot.Open()
