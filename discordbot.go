@@ -79,7 +79,7 @@ func New(token string, options ...Option) (*Bot, error) {
 	}
 
 	// Register handlers to the session
-	bot.Session.AddHandler(commander)
+	bot.Session.AddHandler(Commander)
 	bot.Session.AddHandler(bot.userOnly(bot.HandleStock()))
 	return bot, err
 }
@@ -152,8 +152,8 @@ func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
 	}
 }
 
-// commander return pattern matching handler
-func commander(s *dg.Session, m *dg.MessageCreate) {
+// Commander return pattern matching handler
+func Commander(s *dg.Session, m *dg.MessageCreate) {
 	if commandRegex.MatchString(m.Content) {
 		// Ignore all messages created by the bot itself
 		// This isn't required in this specific example but it's a good practice.

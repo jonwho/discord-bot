@@ -1,5 +1,5 @@
 # Use this Dockerfile to setup the development environment for bot
-FROM golang:1.12.1-alpine3.9 AS dev
+FROM golang:1.13.12-alpine3.12 AS dev
 
 # Install bash shell
 RUN apk update

@@ -5,4 +5,5 @@ discord-bot
 *.swo
 tags
 cmd/discord-bot/discord-bot
+!**/cmd/discord-bot/discord-bot
 SCRATCH.md
