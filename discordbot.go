@@ -27,6 +27,7 @@ type Bot struct {
 
 	// TODO: thinking about deprecating these
 	cmds            []*commands.Command
+	altCmds         []*Command
 	botLogChannelID string
 }
 
@@ -66,6 +67,10 @@ func New(botToken, iexToken, alpacaID, alpacaKey string, options ...Option) (*Bo
 		commands.NewNewsCommand(),
 		commands.NewNextErCommand(),
 	)
+
+	// TODO: rethink this approach
+	// maybe leave it up to Option funcs to add services to the bot instead
+	// bot.altCmds = append(bot.altCmds, ...somethinghere)
 
 	// Register handlers to the session
 	bot.Session.AddHandler(bot.Commander)
@@ -120,6 +125,10 @@ func (b *Bot) UserOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Se
 }
 
 // HandleStock is the bot command to call the stock command
+// TODO: new idea is to explicitly build the handlers which depend on services being
+// DI'd onto the bot
+//
+// if the service is nil then skip the handler
 func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
 	stock := botcommands.NewStock(b.iexToken, b.alpacaID, b.alpacaKey)
 	stockRegex := regexp.MustCompile(`(?i)^\$[\w.]+$`)
@@ -127,6 +136,7 @@ func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
 	// function closure so local variables above only happen once
 	return func(s *dg.Session, m *dg.MessageCreate) {
 		go func() {
+			// TODO: this panic recovery should be captured in middleware
 			defer func() {
 				if err := recover(); err != nil {
 					b.logger.Println([]byte(util.MentionMaintainers(b.maintainers) + " an error has occurred"))

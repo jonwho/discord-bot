@@ -16,10 +16,23 @@ import (
 
 // Stock dependencies go here
 type Stock struct {
-	iexToken  string
-	iexClient *iex.Client
-	alpacaID  string
-	alpacaKey string
+	iexToken   string
+	iexClient  *iex.Client
+	httpClient *http.Client
+	alpacaID   string
+	alpacaKey  string
+}
+
+// break into own package later because it'll be tiring to do *Option naming
+// StockOption used with ctor to modify Stock struct
+type StockOption func(s *Stock) error
+
+// WithHTTPClient sets the http.Client
+func WithHTTPClient(httpClient *http.Client) StockOption {
+	return func(s *Stock) error {
+		s.httpClient = httpClient
+		return nil
+	}
 }
 
 // NewStock - return a stock struct that implements `discordbot.Command`

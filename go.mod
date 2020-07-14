@@ -10,6 +10,7 @@ require (
 	github.com/antchfx/xmlquery v1.2.3 // indirect
 	github.com/antchfx/xpath v1.1.4 // indirect
 	github.com/bwmarrin/discordgo v0.20.2
+	github.com/dnaeon/go-vcr v1.0.1
 	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0
