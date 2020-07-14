@@ -15,6 +15,10 @@ up:
 down:
 	$(DC) down
 
+.PHONY: restart
+restart:
+	$(DC) restart
+
 .PHONY: test
 test:
 	$(DC) run bot go test ./...

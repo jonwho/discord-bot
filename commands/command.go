@@ -40,6 +40,7 @@ var (
 	pst, _                = time.LoadLocation("America/Los_Angeles")
 )
 
+// TODO: don't use init
 func init() {
 	var err error
 	token = os.Getenv("BOT_TOKEN")
@@ -72,6 +73,8 @@ func init() {
 	os.Setenv(common.EnvApiKeyID, alpacaID)
 	os.Setenv(common.EnvApiSecretKey, alpacaKey)
 	alpaca.SetBaseUrl(alpacaPaperURL)
+	// N.B. not actually used
+	// TODO: figure out how to use it or remove it
 	alpacaClient = alpaca.NewClient(common.Credentials())
 
 	redisClient = redis.NewClient(&redis.Options{

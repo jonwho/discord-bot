@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
 	"regexp"
 	"time"
 
@@ -18,6 +17,11 @@ import (
 // Bot data container for bot
 type Bot struct {
 	*dg.Session
+
+	botToken    string
+	iexToken    string
+	alpacaID    string
+	alpacaKey   string
 	logger      *log.Logger
 	maintainers []string
 
@@ -30,13 +34,19 @@ type Bot struct {
 type Option func(b *Bot) error
 
 // New return new bot service
-func New(token string, options ...Option) (*Bot, error) {
-	session, err := dg.New("Bot " + token)
+func New(botToken, iexToken, alpacaID, alpacaKey string, options ...Option) (*Bot, error) {
+	session, err := dg.New("Bot " + botToken)
 	if err != nil {
 		return nil, err
 	}
 
-	bot := &Bot{Session: session}
+	bot := &Bot{
+		Session:   session,
+		botToken:  botToken,
+		iexToken:  iexToken,
+		alpacaID:  alpacaID,
+		alpacaKey: alpacaKey,
+	}
 	for _, option := range options {
 		if err := option(bot); err != nil {
 			return nil, err
@@ -111,10 +121,10 @@ func (b *Bot) UserOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Se
 
 // HandleStock is the bot command to call the stock command
 func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
-	token := os.Getenv("IEX_SECRET_TOKEN")
-	stock := botcommands.NewStock(token)
+	stock := botcommands.NewStock(b.iexToken, b.alpacaID, b.alpacaKey)
 	stockRegex := regexp.MustCompile(`(?i)^\$[\w.]+$`)
 
+	// function closure so local variables above only happen once
 	return func(s *dg.Session, m *dg.MessageCreate) {
 		go func() {
 			defer func() {
