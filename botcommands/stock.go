@@ -22,7 +22,7 @@ type Stock struct {
 	alpacaKey string
 }
 
-// NewStock - return a stock command interface to get quotes and stuff
+// NewStock - return a stock struct that implements `discordbot.Command`
 func NewStock(iexToken, alpacaID, alpacaKey string) *Stock {
 	iexClient, _ := iex.NewClient(iexToken)
 	s := &Stock{
