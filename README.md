@@ -1,7 +1,7 @@
 # discord-bot
 
 ## Requirements
-* Go 1.12
+* Go 1.13
 * Redis
 * Discord account
 * IEX Cloud account
