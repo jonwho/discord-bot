@@ -42,6 +42,8 @@ github.com/golang/protobuf/proto
 github.com/google/go-querystring/query
 # github.com/gorilla/websocket v1.4.1
 github.com/gorilla/websocket
+# github.com/joho/godotenv v1.3.0
+github.com/joho/godotenv
 # github.com/jonwho/go-iex/v3 v3.0.0
 github.com/jonwho/go-iex/v3
 # github.com/kennygrant/sanitize v1.2.4

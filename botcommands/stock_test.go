@@ -2,9 +2,12 @@ package botcommands
 
 import (
 	"bytes"
+	"context"
+	"log"
+	"os"
 	"testing"
-	// "github.com/dnaeon/go-vcr/cassette"
-	// "github.com/dnaeon/go-vcr/recorder"
+
+	"github.com/joho/godotenv"
 )
 
 func TestNewStock(t *testing.T) {
@@ -13,8 +16,20 @@ func TestNewStock(t *testing.T) {
 
 func TestStockExecute(t *testing.T) {
 	buf := bytes.NewBuffer([]byte("$tsla"))
-	actual := buf.String()
 
-	// TODO: always error for now
-	t.Errorf("Expected buf to be written to got\n%v\n", actual)
+	err := godotenv.Load("../.env")
+	if err != nil {
+		log.Fatalln("Error loading .env -- check if file exists or is valid")
+	}
+	iexToken := os.Getenv("IEX_SECRET_TOKEN")
+	alpacaID := os.Getenv("ALPACA_KEY_ID")
+	alpacaKey := os.Getenv("ALPACA_SECRET_KEY")
+	stock := NewStock(iexToken, alpacaID, alpacaKey)
+	ctx := context.Background()
+	stock.Execute(ctx, buf)
+
+	actual := buf.String()
+	if actual == "" {
+		t.Error("Expect buf to be written to")
+	}
 }
