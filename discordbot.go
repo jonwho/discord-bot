@@ -130,7 +130,7 @@ func (b *Bot) UserOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Se
 //
 // if the service is nil then skip the handler
 func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
-	stock := bstock.New(b.iexToken, b.alpacaID, b.alpacaKey)
+	stock, _ := bstock.New(b.iexToken, b.alpacaID, b.alpacaKey)
 	stockRegex := regexp.MustCompile(`(?i)^\$[\w.]+$`)
 
 	// function closure so local variables above only happen once

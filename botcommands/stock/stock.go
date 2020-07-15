@@ -43,15 +43,23 @@ func WithIEXClient(iexClient *iex.Client) Option {
 }
 
 // New returns a struct that implements `discordbot.Command`
-func New(iexToken, alpacaID, alpacaKey string, options ...Option) *Stock {
+func New(iexToken, alpacaID, alpacaKey string, options ...Option) (*Stock, error) {
 	iexClient, _ := iex.NewClient(iexToken)
-	s := &Stock{
+	stock := &Stock{
 		iexToken:  iexToken,
 		iexClient: iexClient,
 		alpacaID:  alpacaID,
 		alpacaKey: alpacaKey,
 	}
-	return s
+
+	// apply options
+	for _, option := range options {
+		if err := option(stock); err != nil {
+			return nil, err
+		}
+	}
+
+	return stock, nil
 }
 
 // Execute fetches quote for the ticker symbol

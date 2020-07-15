@@ -25,7 +25,7 @@ func TestStockExecute(t *testing.T) {
 	iexToken := os.Getenv("IEX_SECRET_TOKEN")
 	alpacaID := os.Getenv("ALPACA_KEY_ID")
 	alpacaKey := os.Getenv("ALPACA_SECRET_KEY")
-	stock := New(iexToken, alpacaID, alpacaKey)
+	stock, _ := New(iexToken, alpacaID, alpacaKey)
 	ctx := context.Background()
 	stock.Execute(ctx, buf)
 
