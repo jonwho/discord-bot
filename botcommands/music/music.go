@@ -35,5 +35,9 @@ func New(options ...Option) (*Music, error) {
 }
 
 func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
+	// steps
+	// 1. download the youtube video
+	// 2. strip audio from video with ffmpeg
+	// 3. stream the audio into the discord socket
 	return nil
 }
