@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/BryanSLam/discord-bot/botcommands"
+	bstock "github.com/BryanSLam/discord-bot/botcommands/stock"
 	"github.com/BryanSLam/discord-bot/commands"
 	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
@@ -130,7 +130,7 @@ func (b *Bot) UserOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Se
 //
 // if the service is nil then skip the handler
 func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
-	stock := botcommands.NewStock(b.iexToken, b.alpacaID, b.alpacaKey)
+	stock := bstock.New(b.iexToken, b.alpacaID, b.alpacaKey)
 	stockRegex := regexp.MustCompile(`(?i)^\$[\w.]+$`)
 
 	// function closure so local variables above only happen once

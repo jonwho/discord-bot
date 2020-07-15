@@ -1,4 +1,4 @@
-package botcommands
+package stock
 
 import (
 	"context"
@@ -23,20 +23,27 @@ type Stock struct {
 	alpacaKey  string
 }
 
-// break into own package later because it'll be tiring to do *Option naming
-// StockOption used with ctor to modify Stock struct
-type StockOption func(s *Stock) error
+// Option used with ctor to modify Stock struct
+type Option func(s *Stock) error
 
 // WithHTTPClient sets the http.Client
-func WithHTTPClient(httpClient *http.Client) StockOption {
+func WithHTTPClient(httpClient *http.Client) Option {
 	return func(s *Stock) error {
 		s.httpClient = httpClient
 		return nil
 	}
 }
 
-// NewStock - return a stock struct that implements `discordbot.Command`
-func NewStock(iexToken, alpacaID, alpacaKey string) *Stock {
+// WithIEXClient sets the iex.Client
+func WithIEXClient(iexClient *iex.Client) Option {
+	return func(s *Stock) error {
+		s.iexClient = iexClient
+		return nil
+	}
+}
+
+// New returns a struct that implements `discordbot.Command`
+func New(iexToken, alpacaID, alpacaKey string, options ...Option) *Stock {
 	iexClient, _ := iex.NewClient(iexToken)
 	s := &Stock{
 		iexToken:  iexToken,
