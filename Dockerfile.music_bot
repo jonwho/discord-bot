@@ -1,0 +1,28 @@
+# Use this Dockerfile to setup the development environment for bot
+FROM golang:1.13.12-alpine3.12 AS dev
+
+# Install bash shell
+RUN apk update
+RUN apk upgrade
+RUN apk add bash
+RUN apk add bash-completion
+RUN apk add build-base
+
+# Install tools required to build project
+# We will need to run `docker build --no-cache .` to update those dependencies
+RUN apk add --no-cache git
+
+# Install ffmpeg for music bot
+RUN apk add --no-cache ffmpeg
+
+# go.mod and go.sum lists project dependencies
+# These layers will only be re-built when Gopkg files are updated
+COPY go.mod go.sum /go/src/discord-bot/
+WORKDIR /go/src/discord-bot/
+# Install library dependencies
+ENV GO111MODULE=on
+RUN go mod vendor
+
+# Copy all project and build it
+# This layer will be rebuilt when ever a file has changed in the project directory
+COPY . /go/src/discord-bot/

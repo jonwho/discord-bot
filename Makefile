@@ -26,3 +26,7 @@ test:
 .PHONY: bash
 bash:
 	$(DC) run bot bash
+
+.PHONY: music
+music:
+	$(DC) run musicbot

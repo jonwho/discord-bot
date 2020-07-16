@@ -39,5 +39,8 @@ func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 	// 1. download the youtube video
 	// 2. strip audio from video with ffmpeg
 	// 3. stream the audio into the discord socket
+
+	rw.Write([]byte("respond to !music command"))
+
 	return nil
 }
