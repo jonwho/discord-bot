@@ -5,6 +5,8 @@ discord-bot
 *.swo
 tags
 cmd/discord-bot/discord-bot
+cmd/music-bot/music-bot
+cmd/garbage-bot/garbage-bot
 !**/cmd/discord-bot/main.go
 !**/cmd/discord-bot/README.md
 SCRATCH.md
