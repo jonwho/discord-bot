@@ -75,7 +75,7 @@ func New(botToken, iexToken, alpacaID, alpacaKey string, options ...Option) (*Bo
 
 	// Register handlers to the session
 	bot.Session.AddHandler(bot.Commander)
-	bot.Session.AddHandler(bot.UserOnly(bot.HandleStock()))
+	bot.Session.AddHandler(bot.Unpanic(bot.UserOnly(bot.HandleStock())))
 	return bot, err
 }
 
@@ -165,34 +165,24 @@ func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
 
 	// function closure so local variables above only happen once
 	return func(s *dg.Session, m *dg.MessageCreate) {
-		go func() {
-			// TODO: this panic recovery should be captured in middleware
-			defer func() {
-				if err := recover(); err != nil {
-					b.logger.Println([]byte(util.MentionMaintainers(b.maintainers) + " an error has occurred"))
-					b.logger.Println(err)
-				}
-			}()
+		dr := NewDiscordReader(s, m, "")
+		dw := NewDiscordWriter(s, m, "")
+		drw := NewDiscordReadWriter(dr, dw)
 
-			dr := NewDiscordReader(s, m, "")
-			dw := NewDiscordWriter(s, m, "")
-			drw := NewDiscordReadWriter(dr, dw)
+		buf, err := ioutil.ReadAll(drw)
+		if err != nil {
+			drw.Write([]byte(err.Error()))
+			return
+		}
 
-			buf, err := ioutil.ReadAll(drw)
-			if err != nil {
-				drw.Write([]byte(err.Error()))
-				return
-			}
+		if !stockRegex.MatchString(string(buf)) {
+			return
+		}
 
-			if !stockRegex.MatchString(string(buf)) {
-				return
-			}
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+		defer cancel()
 
-			ctx := context.Background()
-			ctx, cancel := context.WithTimeout(ctx, time.Second*3)
-			defer cancel()
-
-			stock.Execute(ctx, drw)
-		}()
+		stock.Execute(ctx, drw)
 	}
 }

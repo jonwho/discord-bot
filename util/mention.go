@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// MentionMaintainers TODO: @doc
+// MentionMaintainers pings each maintainer in a single string
 func MentionMaintainers(maintainers []string) string {
 	var mentions []string
 	for _, maintainer := range maintainers {

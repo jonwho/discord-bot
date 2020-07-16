@@ -11,6 +11,9 @@ import (
 )
 
 // NewMusicBot returns bot that only handles music requests
+// N.B. looks like you can have multiple sessions with the same bot token
+// with this approach can instantiate individual bots to handle different services
+// e.g. stock bot, music bot, twitter bot, etc
 func NewMusicBot(botToken string, options ...Option) (*Bot, error) {
 	session, err := dg.New("Bot " + botToken)
 	if err != nil {
@@ -59,6 +62,5 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 		defer cancel()
 
 		music.Execute(ctx, drw)
-		panic("panic!")
 	}
 }
