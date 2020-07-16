@@ -7,16 +7,16 @@ import (
 // DiscordWriter implements io.Writer
 type DiscordWriter struct {
 	session       *dg.Session
-	channelID     string
 	messageCreate *dg.MessageCreate
+	channelID     string
 }
 
 // NewDiscordWriter returns struct that implements io.Writer
 func NewDiscordWriter(s *dg.Session, m *dg.MessageCreate, ch string) *DiscordWriter {
 	return &DiscordWriter{
 		session:       s,
-		channelID:     ch,
 		messageCreate: m,
+		channelID:     ch,
 	}
 }
 

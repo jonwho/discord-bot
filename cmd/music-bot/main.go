@@ -20,11 +20,10 @@ func main() {
 
 	maintainers := strings.Split(os.Getenv("MAINTAINERS"), ",")
 	botLogChannelID := os.Getenv("BOT_LOG_CHANNEL_ID")
-	dbotLogger := dbot.NewDiscordWriter(nil, nil, botLogChannelID)
 	bot, err := dbot.NewMusicBot(
 		botToken,
 		dbot.WithMaintainers(maintainers),
-		dbot.WithLoggers(dbotLogger),
+		dbot.WithBotLogChannelID(botLogChannelID),
 	)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)

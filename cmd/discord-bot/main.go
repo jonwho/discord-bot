@@ -48,7 +48,6 @@ func main() {
 		return
 	}
 
-	dbotLogger := dbot.NewDiscordWriter(nil, nil, botLogChannelID)
 	bot, err := dbot.New(
 		botToken,
 		iexToken,
@@ -56,7 +55,6 @@ func main() {
 		alpacaKey,
 		dbot.WithMaintainers(maintainers),
 		dbot.WithBotLogChannelID(botLogChannelID),
-		dbot.WithLoggers(dbotLogger),
 	)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)

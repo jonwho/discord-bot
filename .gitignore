@@ -1,6 +1,5 @@
 .env
 redis_data/
-discord-bot
 *.swp
 *.swo
 tags

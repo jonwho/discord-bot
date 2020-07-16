@@ -2,6 +2,7 @@ package discordbot
 
 import (
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -79,10 +80,11 @@ func New(botToken, iexToken, alpacaID, alpacaKey string, options ...Option) (*Bo
 }
 
 // WithLoggers set the writers for logging
+// TODO: touch this up to include logger on a discord channel
 func WithLoggers(writers ...io.Writer) Option {
 	return func(b *Bot) error {
 		w := io.MultiWriter(writers...)
-		logger := log.New(w, "BOT LOG", log.LstdFlags)
+		logger := log.New(w, "BOT LOG ", log.LstdFlags)
 		b.logger = logger
 		return nil
 	}
@@ -100,6 +102,10 @@ func WithMaintainers(maintainers []string) Option {
 func WithBotLogChannelID(botLogChannelID string) Option {
 	return func(b *Bot) error {
 		b.botLogChannelID = botLogChannelID
+		dw := NewDiscordWriter(b.Session, nil, botLogChannelID)
+		w := io.MultiWriter(dw)
+		logger := log.New(w, "BOT LOG ", log.LstdFlags)
+		b.logger = logger
 		return nil
 	}
 }
@@ -115,11 +121,35 @@ func (b *Bot) Close() {
 	b.Session.Close()
 }
 
+// UserOnly ensure bot doesn't respond to itself
 func (b *Bot) UserOnly(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Session, _ *dg.MessageCreate) {
 	return func(s *dg.Session, m *dg.MessageCreate) {
 		if m.Author.ID == s.State.User.ID {
 			return
 		}
+		h(s, m)
+	}
+}
+
+// Unpanic ensure panic is captured and logged
+func (b *Bot) Unpanic(h func(_ *dg.Session, _ *dg.MessageCreate)) func(_ *dg.Session, _ *dg.MessageCreate) {
+	return func(s *dg.Session, m *dg.MessageCreate) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				var err error
+				switch t := rec.(type) {
+				case string:
+					err = errors.New(t)
+				case error:
+					err = t
+				default:
+					err = errors.New("Unknown server error")
+				}
+				b.logger.Println(util.MentionMaintainers(b.maintainers) + " an error has occurred")
+				b.logger.Println(err)
+			}
+		}()
+
 		h(s, m)
 	}
 }

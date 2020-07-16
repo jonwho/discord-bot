@@ -7,7 +7,6 @@ import (
 	"time"
 
 	bmusic "github.com/BryanSLam/discord-bot/botcommands/music"
-	"github.com/BryanSLam/discord-bot/util"
 	dg "github.com/bwmarrin/discordgo"
 )
 
@@ -28,7 +27,7 @@ func NewMusicBot(botToken string, options ...Option) (*Bot, error) {
 		}
 	}
 
-	bot.Session.AddHandler(bot.UserOnly(bot.HandleMusic()))
+	bot.Session.AddHandler(bot.Unpanic(bot.UserOnly(bot.HandleMusic())))
 	return bot, nil
 }
 
@@ -38,33 +37,28 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 	// TODO: fix regex later
 	musicRegex := regexp.MustCompile(`(?i)^\!music$`)
 
+	b.logger.Println("Test logger")
+
 	return func(s *dg.Session, m *dg.MessageCreate) {
-		// TODO: this panic recovery should be captured in middleware
-		defer func() {
-			if err := recover(); err != nil {
-				b.logger.Println([]byte(util.MentionMaintainers(b.maintainers) + " an error has occurred"))
-				b.logger.Println(err)
-			}
+		dr := NewDiscordReader(s, m, "")
+		dw := NewDiscordWriter(s, m, "")
+		drw := NewDiscordReadWriter(dr, dw)
 
-			dr := NewDiscordReader(s, m, "")
-			dw := NewDiscordWriter(s, m, "")
-			drw := NewDiscordReadWriter(dr, dw)
+		buf, err := ioutil.ReadAll(drw)
+		if err != nil {
+			drw.Write([]byte(err.Error()))
+			return
+		}
 
-			buf, err := ioutil.ReadAll(drw)
-			if err != nil {
-				drw.Write([]byte(err.Error()))
-				return
-			}
+		if !musicRegex.MatchString(string(buf)) {
+			return
+		}
 
-			if !musicRegex.MatchString(string(buf)) {
-				return
-			}
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+		defer cancel()
 
-			ctx := context.Background()
-			ctx, cancel := context.WithTimeout(ctx, time.Second*3)
-			defer cancel()
-
-			music.Execute(ctx, drw)
-		}()
+		music.Execute(ctx, drw)
+		panic("panic!")
 	}
 }
