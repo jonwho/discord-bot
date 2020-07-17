@@ -1,5 +1,6 @@
 .env
 redis_data/
+ytdl_data/
 *.swp
 *.swo
 tags

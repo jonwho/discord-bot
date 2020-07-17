@@ -8,12 +8,22 @@ RUN apk add bash
 RUN apk add bash-completion
 RUN apk add build-base
 
+# Dev tools
+RUN apk add autoconf automake libtool gcc make
+
 # Install tools required to build project
 # We will need to run `docker build --no-cache .` to update those dependencies
 RUN apk add --no-cache git
 
-# Install ffmpeg for music bot
+# Install ffmpeg to strip audio stream from mp4
 RUN apk add --no-cache ffmpeg
+
+# Install opus codec for mp3 playback
+RUN git clone https://gitlab.xiph.org/xiph/opus.git
+RUN cd ./opus && ./autogen.sh
+RUN cd ./opus && ./configure
+RUN cd ./opus && make
+RUN cd ./opus && make install
 
 # go.mod and go.sum lists project dependencies
 # These layers will only be re-built when Gopkg files are updated

@@ -61,6 +61,10 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 		defer cancel()
 
-		music.Execute(ctx, drw)
+		err = music.Execute(ctx, drw)
+		if err != nil {
+			drw.Write([]byte(err.Error()))
+			return
+		}
 	}
 }
