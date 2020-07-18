@@ -1,6 +1,7 @@
 package music
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/binary"
@@ -10,8 +11,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
+	"sync"
 
+	dg "github.com/bwmarrin/discordgo"
+	"github.com/layeh/gopus"
 	"github.com/rylio/ytdl"
 )
 
@@ -43,6 +48,33 @@ func New(options ...Option) (*Music, error) {
 	return music, nil
 }
 
+const (
+	channels      int    = 2                   // 1 for mono, 2 for stereo
+	frameRate     int    = 48000               // audio sampling rate
+	frameSize     int    = 960                 // uint16 size of each audio frame
+	maxBytes      int    = (frameSize * 2) * 2 // max size of opus data
+	testGuildID   string = "422149443266281492"
+	testChannelID string = "422149443702358037"
+)
+
+var (
+	speakers    map[uint32]*gopus.Decoder
+	opusEncoder *gopus.Encoder
+	mu          sync.Mutex
+)
+
+func (*Music) PlayTest(s *dg.Session, m *dg.MessageCreate) error {
+	dgv, err := s.ChannelVoiceJoin(testGuildID, testChannelID, false, true)
+	if err != nil {
+		return err
+	}
+
+	opusTitle := fmt.Sprintf("ytdl_data/%s.opus", "rzc3_b_KnHc")
+	playAudioFile(dgv, opusTitle, make(chan bool))
+
+	return nil
+}
+
 // N.B. Discord Voice API requires audio to be encoded with Opus
 func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 	// steps
@@ -66,8 +98,8 @@ func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 	// 2. strip audio from video with ffmpeg
 	opusTitle := fmt.Sprintf("ytdl_data/%s.opus", videoInfo.ID)
 	if !fileExists(opusTitle) {
-		// ffmpegArgStr := fmt.Sprintf("-i %s -q:a 0 -map a %s", mp4Title, opusTitle)
-		ffmpegArgStr := fmt.Sprintf("-i %s %s", mp4Title, opusTitle)
+		ffmpegArgStr := fmt.Sprintf("-i %s -c:a pcm_s16le %s", mp4Title, opusTitle)
+		// ffmpegArgStr := fmt.Sprintf("-i %s %s", mp4Title, opusTitle)
 		args := strings.Split(ffmpegArgStr, " ")
 		var stderr bytes.Buffer
 		cmd := exec.Command("ffmpeg", args...)
@@ -88,11 +120,9 @@ func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 	// var buffer = make([][]byte, 0)
 	// for i := 0; i < 100; i++ {
 	for {
-		log.Println("BEFORE ", opuslen)
 		// Read opus frame length from file
 		// N.B. input and output are little-endian signed 16-bit PCM (pulse code modulation) files
 		err = binary.Read(opusFile, binary.LittleEndian, &opuslen)
-		log.Println("AFTER ", opuslen)
 
 		// EOF stop
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -130,14 +160,6 @@ func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 		rw.Write(inBuf)
 	}
 
-	// counter := 1
-	// for _, buf := range buffer {
-	//   log.Println("looping buffer ", counter)
-	//   counter++
-	//   log.Println(buf)
-	//   rw.Write(buf)
-	// }
-
 	return nil
 }
 
@@ -148,4 +170,100 @@ func fileExists(filename string) bool {
 		}
 	}
 	return true
+}
+
+// SendPCM will receive on the provied channel encode
+// received PCM data into Opus then send that to Discordgo
+func sendPCM(v *dg.VoiceConnection, pcm <-chan []int16) {
+	if pcm == nil {
+		return
+	}
+
+	opusEncoder, err := gopus.NewEncoder(frameRate, channels, gopus.Audio)
+
+	if err != nil {
+		return
+	}
+
+	for {
+		// read pcm from chan, exit if channel is closed.
+		recv, ok := <-pcm
+		if !ok {
+			return
+		}
+
+		// try encoding pcm frame with Opus
+		opus, err := opusEncoder.Encode(recv, frameSize, maxBytes)
+		if err != nil {
+			return
+		}
+
+		if v.Ready == false || v.OpusSend == nil {
+			return
+		}
+		// send encoded opus data to the sendOpus channel
+		v.OpusSend <- opus
+	}
+}
+
+func playAudioFile(v *dg.VoiceConnection, filename string, stop <-chan bool) {
+	// Create a shell command "object" to run.
+	run := exec.Command("ffmpeg", "-i", filename, "-f", "s16le", "-ar", strconv.Itoa(frameRate), "-ac", strconv.Itoa(channels), "pipe:1")
+	ffmpegout, err := run.StdoutPipe()
+	if err != nil {
+		return
+	}
+
+	ffmpegbuf := bufio.NewReaderSize(ffmpegout, 16384)
+
+	// Starts the ffmpeg command
+	err = run.Start()
+	if err != nil {
+		return
+	}
+
+	go func() {
+		<-stop
+		err = run.Process.Kill()
+	}()
+
+	// Send "speaking" packet over the voice websocket
+	err = v.Speaking(true)
+	if err != nil {
+	}
+
+	// Send not "speaking" packet over the websocket when we finish
+	defer func() {
+		err := v.Speaking(false)
+		if err != nil {
+		}
+	}()
+
+	send := make(chan []int16, 2)
+	defer close(send)
+
+	close := make(chan bool)
+	go func() {
+		sendPCM(v, send)
+		close <- true
+	}()
+
+	for {
+		// read data from ffmpeg stdout
+		audiobuf := make([]int16, frameSize*channels)
+		err = binary.Read(ffmpegbuf, binary.LittleEndian, &audiobuf)
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			return
+		}
+		if err != nil {
+			return
+		}
+
+		// Send received PCM to the sendPCM channel
+		select {
+		case send <- audiobuf:
+		case <-close:
+			return
+		}
+	}
 }

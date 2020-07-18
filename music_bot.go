@@ -83,8 +83,9 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 		ctx, cancel := context.WithTimeout(ctx, time.Minute*5)
 		defer cancel()
 
-		drw := NewDiscordReadWriter(discordReader, discordVoiceWriter)
-		err = music.Execute(ctx, drw)
+		// drw := NewDiscordReadWriter(discordReader, discordVoiceWriter)
+		// err = music.Execute(ctx, drw)
+		err = music.PlayTest(s, m)
 		if err != nil {
 			b.logger.Println(err)
 			return

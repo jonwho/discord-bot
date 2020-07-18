@@ -17,6 +17,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/jonwho/go-iex/v3 v3.0.0
 	github.com/kennygrant/sanitize v1.2.4 // indirect
+	github.com/layeh/gopus v0.0.0-20161224163843-0ebf989153aa
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
 	github.com/robfig/cron v1.2.0
