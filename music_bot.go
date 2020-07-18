@@ -40,16 +40,38 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 	// TODO: fix regex later
 	musicRegex := regexp.MustCompile(`(?i)^\!music$`)
 
-	b.logger.Println("Test logger")
-
 	return func(s *dg.Session, m *dg.MessageCreate) {
-		dr := NewDiscordReader(s, m, "")
-		dw := NewDiscordWriter(s, m, "")
-		drw := NewDiscordReadWriter(dr, dw)
+		discordReader := NewDiscordReader(s, m, "")
 
-		buf, err := ioutil.ReadAll(drw)
+		// find the channel where the message came from
+		channel, err := s.State.Channel(m.ChannelID)
 		if err != nil {
-			drw.Write([]byte(err.Error()))
+			b.logger.Println(err)
+			return
+		}
+
+		// find the guild for that channel
+		guild, err := s.State.Guild(channel.GuildID)
+		if err != nil {
+			b.logger.Println(err)
+			return
+		}
+
+		// look for the message sender in the guild's voice channels
+		var discordVoiceWriter *DiscordWriter
+		for _, vs := range guild.VoiceStates {
+			if vs.UserID == m.Author.ID {
+				discordVoiceWriter = NewDiscordWriter(s, m, vs.ChannelID, WithIsVoiceChannel(true), WithGuildID(guild.ID))
+			}
+		}
+		if discordVoiceWriter == nil {
+			b.logger.Println("Could not find a voice channel to join. Try again.")
+			return
+		}
+
+		buf, err := ioutil.ReadAll(discordReader)
+		if err != nil {
+			b.logger.Println(err)
 			return
 		}
 
@@ -58,12 +80,13 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 		}
 
 		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+		ctx, cancel := context.WithTimeout(ctx, time.Minute*5)
 		defer cancel()
 
+		drw := NewDiscordReadWriter(discordReader, discordVoiceWriter)
 		err = music.Execute(ctx, drw)
 		if err != nil {
-			drw.Write([]byte(err.Error()))
+			b.logger.Println(err)
 			return
 		}
 	}

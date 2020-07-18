@@ -1,14 +1,16 @@
 package music
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/rylio/ytdl"
 )
@@ -41,11 +43,8 @@ func New(options ...Option) (*Music, error) {
 	return music, nil
 }
 
+// N.B. Discord Voice API requires audio to be encoded with Opus
 func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
-	// add additional 20 seconds to timeout?
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-
 	// steps
 	// 1. download the youtube video
 	ytdlClient := ytdl.DefaultClient
@@ -65,18 +64,88 @@ func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 	}
 
 	// 2. strip audio from video with ffmpeg
-	mp3Title := fmt.Sprintf("ytdl_data/%s.mp3", videoInfo.ID)
-	ffmpegArgStr := fmt.Sprintf("-i %s -q:a 0 -map a %s", mp4Title, mp3Title)
-	args := strings.Split(ffmpegArgStr, " ")
-	cmd := exec.Command("ffmpeg", args...)
-	err = cmd.Run()
-	if err != nil {
-		rw.Write([]byte(err.Error()))
+	opusTitle := fmt.Sprintf("ytdl_data/%s.opus", videoInfo.ID)
+	if !fileExists(opusTitle) {
+		// ffmpegArgStr := fmt.Sprintf("-i %s -q:a 0 -map a %s", mp4Title, opusTitle)
+		ffmpegArgStr := fmt.Sprintf("-i %s %s", mp4Title, opusTitle)
+		args := strings.Split(ffmpegArgStr, " ")
+		var stderr bytes.Buffer
+		cmd := exec.Command("ffmpeg", args...)
+		cmd.Stderr = &stderr
+		err = cmd.Run()
+		if err != nil {
+			log.Println(stderr.String())
+			return err
+		}
 	}
 
 	// 3. stream the audio into the discord socket
+	opusFile, err := os.Open(opusTitle)
+	if err != nil {
+		return err
+	}
+	var opuslen int16
+	// var buffer = make([][]byte, 0)
+	// for i := 0; i < 100; i++ {
+	for {
+		log.Println("BEFORE ", opuslen)
+		// Read opus frame length from file
+		// N.B. input and output are little-endian signed 16-bit PCM (pulse code modulation) files
+		err = binary.Read(opusFile, binary.LittleEndian, &opuslen)
+		log.Println("AFTER ", opuslen)
 
-	rw.Write([]byte("respond to !music command"))
+		// EOF stop
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			log.Println("EOF OR ErrUnexpectedEOF")
+			log.Println(err)
+			err := opusFile.Close()
+			if err != nil {
+				log.Println("FILE CLOSE ERROR")
+				log.Println(err)
+				return err
+			}
+			break
+		}
+
+		// report this err
+		if err != nil {
+			log.Println("WEIRD ERROR")
+			log.Println(err)
+			return err
+		}
+
+		// Read bytes
+		inBuf := make([]byte, binary.MaxVarintLen64)
+		binary.PutVarint(inBuf, int64(opuslen))
+		// err = binary.Read(opusFile, binary.LittleEndian, &inBuf)
+
+		// EOF errors should not exist
+		// if err != nil {
+		//   log.Println("ERR READING OPUS BYTES")
+		//   log.Println(err)
+		//   return err
+		// }
+
+		// buffer = append(buffer, inBuf)
+		rw.Write(inBuf)
+	}
+
+	// counter := 1
+	// for _, buf := range buffer {
+	//   log.Println("looping buffer ", counter)
+	//   counter++
+	//   log.Println(buf)
+	//   rw.Write(buf)
+	// }
 
 	return nil
+}
+
+func fileExists(filename string) bool {
+	if _, err := os.Stat(filename); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }
