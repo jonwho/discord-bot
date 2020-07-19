@@ -5,15 +5,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 
 	dg "github.com/bwmarrin/discordgo"
 	"github.com/layeh/gopus"
@@ -57,12 +58,6 @@ const (
 	testChannelID string = "422149443702358037"
 )
 
-var (
-	speakers    map[uint32]*gopus.Decoder
-	opusEncoder *gopus.Encoder
-	mu          sync.Mutex
-)
-
 func (*Music) PlayTest(s *dg.Session, m *dg.MessageCreate) error {
 	dgv, err := s.ChannelVoiceJoin(testGuildID, testChannelID, false, true)
 	if err != nil {
@@ -79,8 +74,14 @@ func (*Music) PlayTest(s *dg.Session, m *dg.MessageCreate) error {
 func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 	// steps
 	// 1. download the youtube video
+	buf, err := ioutil.ReadAll(rw)
+	if err != nil {
+		return err
+	}
+	argSplit := strings.Split(string(buf), " ")
+	ytURL := argSplit[1]
 	ytdlClient := ytdl.DefaultClient
-	videoInfo, err := ytdlClient.GetVideoInfo(ctx, "https://www.youtube.com/watch?v=rzc3_b_KnHc")
+	videoInfo, err := ytdlClient.GetVideoInfo(ctx, ytURL)
 	if err != nil {
 		return err
 	}
@@ -98,8 +99,7 @@ func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 	// 2. strip audio from video with ffmpeg
 	opusTitle := fmt.Sprintf("ytdl_data/%s.opus", videoInfo.ID)
 	if !fileExists(opusTitle) {
-		ffmpegArgStr := fmt.Sprintf("-i %s -c:a pcm_s16le %s", mp4Title, opusTitle)
-		// ffmpegArgStr := fmt.Sprintf("-i %s %s", mp4Title, opusTitle)
+		ffmpegArgStr := fmt.Sprintf("-i %s %s", mp4Title, opusTitle)
 		args := strings.Split(ffmpegArgStr, " ")
 		var stderr bytes.Buffer
 		cmd := exec.Command("ffmpeg", args...)
@@ -107,58 +107,30 @@ func (m *Music) Execute(ctx context.Context, rw io.ReadWriter) error {
 		err = cmd.Run()
 		if err != nil {
 			log.Println(stderr.String())
-			return err
+			return errors.New(err.Error() + " " + stderr.String())
 		}
 	}
 
 	// 3. stream the audio into the discord socket
-	opusFile, err := os.Open(opusTitle)
+	run := exec.Command("ffmpeg", "-i", opusTitle, "-f", "s16le", "-ar", strconv.Itoa(frameRate), "-ac", strconv.Itoa(channels), "pipe:1")
+	ffmpegout, err := run.StdoutPipe()
 	if err != nil {
 		return err
 	}
-	var opuslen int16
-	// var buffer = make([][]byte, 0)
-	// for i := 0; i < 100; i++ {
-	for {
-		// Read opus frame length from file
-		// N.B. input and output are little-endian signed 16-bit PCM (pulse code modulation) files
-		err = binary.Read(opusFile, binary.LittleEndian, &opuslen)
+	ffmpegbuf := bufio.NewReaderSize(ffmpegout, 16384)
 
-		// EOF stop
-		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			log.Println("EOF OR ErrUnexpectedEOF")
-			log.Println(err)
-			err := opusFile.Close()
-			if err != nil {
-				log.Println("FILE CLOSE ERROR")
-				log.Println(err)
-				return err
-			}
-			break
-		}
-
-		// report this err
-		if err != nil {
-			log.Println("WEIRD ERROR")
-			log.Println(err)
-			return err
-		}
-
-		// Read bytes
-		inBuf := make([]byte, binary.MaxVarintLen64)
-		binary.PutVarint(inBuf, int64(opuslen))
-		// err = binary.Read(opusFile, binary.LittleEndian, &inBuf)
-
-		// EOF errors should not exist
-		// if err != nil {
-		//   log.Println("ERR READING OPUS BYTES")
-		//   log.Println(err)
-		//   return err
-		// }
-
-		// buffer = append(buffer, inBuf)
-		rw.Write(inBuf)
+	// Starts the ffmpeg command
+	err = run.Start()
+	if err != nil {
+		return err
 	}
+
+	audiobuf, err := ioutil.ReadAll(ffmpegbuf)
+	if err != nil {
+		return err
+	}
+
+	rw.Write(audiobuf)
 
 	return nil
 }
@@ -172,7 +144,7 @@ func fileExists(filename string) bool {
 	return true
 }
 
-// SendPCM will receive on the provied channel encode
+// SendPCM will receive on the provided channel encode
 // received PCM data into Opus then send that to Discordgo
 func sendPCM(v *dg.VoiceConnection, pcm <-chan []int16) {
 	if pcm == nil {

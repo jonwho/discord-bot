@@ -1,10 +1,21 @@
 package discordbot
 
 import (
+	"bytes"
+	"encoding/binary"
+	"io"
 	"log"
 	// "time"
 
 	dg "github.com/bwmarrin/discordgo"
+	"github.com/layeh/gopus"
+)
+
+const (
+	channels  int = 2                   // 1 for mono, 2 for stereo
+	frameRate int = 48000               // audio sampling rate
+	frameSize int = 960                 // uint16 size of each audio frame
+	maxBytes  int = (frameSize * 2) * 2 // max size of opus data
 )
 
 // DiscordWriter implements io.Writer
@@ -51,7 +62,7 @@ func NewDiscordWriter(s *dg.Session, m *dg.MessageCreate, ch string, options ...
 }
 
 // Write sends the bytes to the Discord channel which can be text or voice channel
-func (w *DiscordWriter) Write(b []byte) (n int, err error) {
+func (w *DiscordWriter) Write(b []byte) (int, error) {
 	// 1. try voice channel
 	// 2. try text channel
 	// 3. default to respond to text channel
@@ -62,12 +73,49 @@ func (w *DiscordWriter) Write(b []byte) (n int, err error) {
 		if err != nil {
 			log.Println("voice channel error")
 			log.Println(err)
+			return 0, err
 		}
-		// time.Sleep(time.Millisecond * 250)
-		voiceChannel.Speaking(true)
-		voiceChannel.OpusSend <- b
-		// time.Sleep(time.Millisecond * 250)
-		// voiceChannel.Speaking(false)
+
+		// Send "speaking" packet over the voice websocket
+		err = voiceChannel.Speaking(true)
+		if err != nil {
+			return 0, err
+		}
+
+		// Send not "speaking" packet over the websocket when we finish
+		defer func() {
+			voiceChannel.Speaking(false)
+		}()
+
+		send := make(chan []int16, 2)
+		defer close(send)
+
+		close := make(chan bool)
+		go func() {
+			sendPCM(voiceChannel, send)
+			close <- true
+		}()
+
+		buf := bytes.NewReader(b)
+
+		for {
+			// read data from ffmpeg stdout
+			audiobuf := make([]int16, frameSize*channels)
+			err = binary.Read(buf, binary.LittleEndian, &audiobuf)
+			if err == io.EOF || err == io.ErrUnexpectedEOF {
+				return 0, err
+			}
+			if err != nil {
+				return 0, err
+			}
+
+			// Send received PCM to the sendPCM channel
+			select {
+			case send <- audiobuf:
+			case <-close:
+				return 0, err
+			}
+		}
 	} else if w.channelID != "" {
 		// if writer has channel then send bytes to it
 		w.session.ChannelMessageSend(w.channelID, string(b))
@@ -77,4 +125,38 @@ func (w *DiscordWriter) Write(b []byte) (n int, err error) {
 	}
 
 	return len(b), nil
+}
+
+// SendPCM will receive on the provided channel encode
+// received PCM data into Opus then send that to Discordgo
+func sendPCM(v *dg.VoiceConnection, pcm <-chan []int16) {
+	if pcm == nil {
+		return
+	}
+
+	opusEncoder, err := gopus.NewEncoder(frameRate, channels, gopus.Audio)
+
+	if err != nil {
+		return
+	}
+
+	for {
+		// read pcm from chan, exit if channel is closed.
+		recv, ok := <-pcm
+		if !ok {
+			return
+		}
+
+		// try encoding pcm frame with Opus
+		opus, err := opusEncoder.Encode(recv, frameSize, maxBytes)
+		if err != nil {
+			return
+		}
+
+		if v.Ready == false || v.OpusSend == nil {
+			return
+		}
+		// send encoded opus data to the sendOpus channel
+		v.OpusSend <- opus
+	}
 }

@@ -14,6 +14,12 @@ import (
 // N.B. looks like you can have multiple sessions with the same bot token
 // with this approach can instantiate individual bots to handle different services
 // e.g. stock bot, music bot, twitter bot, etc
+//
+// Bot not in a usable state but was fun learning about the OPUS codec.
+// TODO:
+// 1. Channels to communicate when to stop playing, leaving the voice channel, etc.
+// 2. Prevent multiple voice streams (queue up additional songs instead).
+// 3. Queue for songs.
 func NewMusicBot(botToken string, options ...Option) (*Bot, error) {
 	session, err := dg.New("Bot " + botToken)
 	if err != nil {
@@ -38,7 +44,7 @@ func NewMusicBot(botToken string, options ...Option) (*Bot, error) {
 func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 	music, _ := bmusic.New()
 	// TODO: fix regex later
-	musicRegex := regexp.MustCompile(`(?i)^\!music$`)
+	musicRegex := regexp.MustCompile(`(?i)^\!music [\w:\/\?\.-_]+$`)
 
 	return func(s *dg.Session, m *dg.MessageCreate) {
 		discordReader := NewDiscordReader(s, m, "")
@@ -76,6 +82,7 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 		}
 
 		if !musicRegex.MatchString(string(buf)) {
+			b.logger.Printf("%s did not match regex\n", string(buf))
 			return
 		}
 
@@ -83,9 +90,8 @@ func (b *Bot) HandleMusic() func(s *dg.Session, m *dg.MessageCreate) {
 		ctx, cancel := context.WithTimeout(ctx, time.Minute*5)
 		defer cancel()
 
-		// drw := NewDiscordReadWriter(discordReader, discordVoiceWriter)
-		// err = music.Execute(ctx, drw)
-		err = music.PlayTest(s, m)
+		drw := NewDiscordReadWriter(discordReader, discordVoiceWriter)
+		err = music.Execute(ctx, drw)
 		if err != nil {
 			b.logger.Println(err)
 			return

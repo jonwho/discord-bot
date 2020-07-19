@@ -18,12 +18,13 @@ services:
       - ./redis_data:/data
     ports:
       - 6380:6379
-  musicbot:
-    env_file: .env
-    build:
-      context: .
-      dockerfile: Dockerfile.music_bot
-    command: bash -c "go build -o cmd/music-bot/music-bot cmd/music-bot/main.go && cmd/music-bot/music-bot"
-    volumes:
-      - .:/go/src/discord-bot
-    tty: true
+  # uncomment if you want to play with music bot
+  # musicbot:
+  #   env_file: .env
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.music_bot
+  #   command: bash -c "go build -o cmd/music-bot/music-bot cmd/music-bot/main.go && cmd/music-bot/music-bot"
+  #   volumes:
+  #     - .:/go/src/discord-bot
+  #   tty: true
