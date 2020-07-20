@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/BryanSLam/discord-bot/botcommands/earnings_report"
 	bstock "github.com/BryanSLam/discord-bot/botcommands/stock"
 	"github.com/BryanSLam/discord-bot/commands"
 	"github.com/BryanSLam/discord-bot/util"
@@ -76,6 +77,7 @@ func New(botToken, iexToken, alpacaID, alpacaKey string, options ...Option) (*Bo
 	// Register handlers to the session
 	bot.Session.AddHandler(bot.Commander)
 	bot.Session.AddHandler(bot.Unpanic(bot.UserOnly(bot.HandleStock())))
+	bot.Session.AddHandler(bot.Unpanic(bot.UserOnly(bot.HandleEarningsReport())))
 	return bot, err
 }
 
@@ -184,5 +186,32 @@ func (b *Bot) HandleStock() func(s *dg.Session, m *dg.MessageCreate) {
 		defer cancel()
 
 		stock.Execute(ctx, drw)
+	}
+}
+
+func (b *Bot) HandleEarningsReport() func(s *dg.Session, m *dg.MessageCreate) {
+	earningsReport, _ := earningsreport.New(b.iexToken)
+	earningsReportRegex := regexp.MustCompile(`(?i)^\$[\w.]+ er$`)
+
+	return func(s *dg.Session, m *dg.MessageCreate) {
+		dr := NewDiscordReader(s, m, "")
+		dw := NewDiscordWriter(s, m, "")
+		drw := NewDiscordReadWriter(dr, dw)
+
+		buf, err := ioutil.ReadAll(drw)
+		if err != nil {
+			drw.Write([]byte(err.Error()))
+			return
+		}
+
+		if !earningsReportRegex.MatchString(string(buf)) {
+			return
+		}
+
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+		defer cancel()
+
+		earningsReport.Execute(ctx, drw)
 	}
 }

@@ -204,6 +204,30 @@ func FormatStock(quote *iex.Quote, bar struct {
 
 // FormatEarnings TODO: @doc
 func FormatEarnings(earnings *iex.Earnings) string {
+	if len(earnings.Earnings) == 0 {
+		return "No earnings to report for " + earnings.Symbol
+	}
+
+	recentEarnings := earnings.Earnings[0]
+	return formatEarning(earnings.Symbol, recentEarnings)
+}
+
+// FormatAllEarnings TODO: @doc
+func FormatAllEarnings(earnings *iex.Earnings) []string {
+	if len(earnings.Earnings) == 0 {
+		return []string{"No earnings to report for " + earnings.Symbol}
+	}
+
+	reports := []string{}
+
+	for _, earning := range earnings.Earnings {
+		reports = append(reports, formatEarning(earnings.Symbol, earning))
+	}
+
+	return reports
+}
+
+func formatEarning(symbol string, earning iex.Earning) string {
 	stringOrder := []string{
 		"Symbol",
 		"Actual EPS",
@@ -215,22 +239,16 @@ func FormatEarnings(earnings *iex.Earnings) string {
 		"Fiscal Period",
 	}
 
-	if len(earnings.Earnings) == 0 {
-		return "No earnings to report for " + earnings.Symbol
-	}
-
-	recentEarnings := earnings.Earnings[0]
-
 	outputMap := map[string]string{
-		"Symbol":            earnings.Symbol,
-		"Actual EPS":        fmt.Sprintf("%#v", recentEarnings.ActualEPS),
-		"Consensus EPS":     fmt.Sprintf("%#v", recentEarnings.ConsensusEPS),
-		"EPS delta":         fmt.Sprintf("%#v", recentEarnings.EPSSurpriseDollar),
-		"Announce Time":     recentEarnings.AnnounceTime,
-		"Fiscal Start Date": recentEarnings.FiscalEndDate,
-		"Fiscal End Date":   recentEarnings.EPSReportDate,
-		"Fiscal Period":     recentEarnings.FiscalPeriod,
-		"Year Ago EPS":      fmt.Sprintf("%#v", recentEarnings.YearAgo),
+		"Symbol":            symbol,
+		"Actual EPS":        fmt.Sprintf("%#v", earning.ActualEPS),
+		"Consensus EPS":     fmt.Sprintf("%#v", earning.ConsensusEPS),
+		"EPS delta":         fmt.Sprintf("%#v", earning.EPSSurpriseDollar),
+		"Announce Time":     earning.AnnounceTime,
+		"Fiscal Start Date": earning.FiscalEndDate,
+		"Fiscal End Date":   earning.EPSReportDate,
+		"Fiscal Period":     earning.FiscalPeriod,
+		"Year Ago EPS":      fmt.Sprintf("%#v", earning.YearAgo),
 	}
 
 	if strings.ToLower(outputMap["Announce Time"]) == "bto" {

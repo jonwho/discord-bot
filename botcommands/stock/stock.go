@@ -46,10 +46,11 @@ func WithIEXClient(iexClient *iex.Client) Option {
 func New(iexToken, alpacaID, alpacaKey string, options ...Option) (*Stock, error) {
 	iexClient, _ := iex.NewClient(iexToken)
 	stock := &Stock{
-		iexToken:  iexToken,
-		iexClient: iexClient,
-		alpacaID:  alpacaID,
-		alpacaKey: alpacaKey,
+		iexToken:   iexToken,
+		iexClient:  iexClient,
+		httpClient: http.DefaultClient,
+		alpacaID:   alpacaID,
+		alpacaKey:  alpacaKey,
 	}
 
 	// apply options
