@@ -15,7 +15,7 @@ require (
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/joho/godotenv v1.3.0
-	github.com/jonwho/go-iex/v3 v3.0.0
+	github.com/jonwho/go-iex/v4 v4.0.1
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/layeh/gopus v0.0.0-20161224163843-0ebf989153aa
 	github.com/onsi/ginkgo v1.11.0 // indirect

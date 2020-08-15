@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/BryanSLam/discord-bot/util"
-	iex "github.com/jonwho/go-iex/v3"
+	iex "github.com/jonwho/go-iex/v4"
 )
 
 type EarningsReport struct {
