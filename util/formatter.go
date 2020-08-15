@@ -157,6 +157,7 @@ func FormatStock(quote *iex.Quote, bar struct {
 		"Change % (1 day)",
 		"Delta",
 		"Volume",
+		"Market Cap",
 	}
 
 	var current float64
@@ -183,6 +184,7 @@ func FormatStock(quote *iex.Quote, bar struct {
 		"Change % (1 day)": fmt.Sprintf("%.3f %%", changePercent),
 		"Delta":            fmt.Sprintf("%.2f", delta),
 		"Volume":           fmt.Sprintf("%d", quote.LatestVolume),
+		"Market Cap":       fmt.Sprintf("%d", quote.MarketCap),
 	}
 
 	printer := message.NewPrinter(language.English)
@@ -190,6 +192,9 @@ func FormatStock(quote *iex.Quote, bar struct {
 
 	for _, k := range stringOrder {
 		if k == "Volume" {
+			i, _ := strconv.Atoi(outputMap[k])
+			fmtStr += printer.Sprintf("%-17s %d\n", k, i)
+		} else if k == "Market Cap" {
 			i, _ := strconv.Atoi(outputMap[k])
 			fmtStr += printer.Sprintf("%-17s %d\n", k, i)
 		} else {
