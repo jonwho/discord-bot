@@ -11,7 +11,7 @@ import (
 	"github.com/alpacahq/alpaca-trade-api-go/common"
 	"github.com/go-redis/redis"
 	iex "github.com/jonwho/go-iex/v4"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 // Command TODO: @doc
@@ -83,6 +83,6 @@ func init() {
 		DB:       0,
 	})
 
-	cronner = cron.NewWithLocation(pst)
+	cronner = cron.New(cron.WithLocation(pst))
 	cronner.Start()
 }

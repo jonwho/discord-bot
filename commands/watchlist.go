@@ -13,7 +13,7 @@ import (
 
 func init() {
 	// Run on 15 minute interval between hours 6-13 from Monday-Friday
-	cronner.AddFunc("0 0/15 6-13 * * MON-FRI", watchlistCron)
+	cronner.AddFunc("*/15 6-13 * * MON-FRI", watchlistCron)
 }
 
 // NewWatchlistCommand TODO: @doc

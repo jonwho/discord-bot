@@ -30,6 +30,7 @@ type DiscordWriter struct {
 // DiscordWriterOption configures additional properties on DiscordWriter
 type DiscordWriterOption func(dw *DiscordWriter) error
 
+// WithIsVoiceChannel set flag for voice channel
 func WithIsVoiceChannel(isVoiceChannel bool) DiscordWriterOption {
 	return func(dw *DiscordWriter) error {
 		dw.isVoiceChannel = isVoiceChannel
@@ -37,6 +38,7 @@ func WithIsVoiceChannel(isVoiceChannel bool) DiscordWriterOption {
 	}
 }
 
+// WithGuildID sets the guild ID
 func WithGuildID(guildID string) DiscordWriterOption {
 	return func(dw *DiscordWriter) error {
 		dw.guildID = guildID
@@ -125,6 +127,16 @@ func (w *DiscordWriter) Write(b []byte) (int, error) {
 	}
 
 	return len(b), nil
+}
+
+// ChannelMessageSend send string to channel
+func (w *DiscordWriter) ChannelMessageSend(content string) (*dg.Message, error) {
+	return w.session.ChannelMessageSend(w.channelID, content)
+}
+
+// Pin takes slice of bytes and creates a PinMessage to send to the channel
+func (w *DiscordWriter) Pin(messageID string) error {
+	return w.session.ChannelMessagePin(w.channelID, messageID)
 }
 
 // SendPCM will receive on the provided channel encode

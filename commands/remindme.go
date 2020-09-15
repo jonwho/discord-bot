@@ -16,7 +16,7 @@ import (
 
 func init() {
 	// Run once at 6:00 AM from Monday-Friday
-	cronner.AddFunc("0 0 6 * * MON-FRI", todaysReminders)
+	cronner.AddFunc("00 06 * * MON-FRI", todaysReminders)
 }
 
 // NewRemindmeCommand TODO: @doc
