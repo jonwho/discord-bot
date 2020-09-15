@@ -20,7 +20,7 @@ require (
 	github.com/layeh/gopus v0.0.0-20161224163843-0ebf989153aa
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
-	github.com/robfig/cron v1.2.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/rylio/ytdl v0.6.3
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/shopspring/decimal v0.0.0-20200105231215-408a2507e114 // indirect

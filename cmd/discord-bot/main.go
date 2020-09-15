@@ -1,19 +1,34 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	dbot "github.com/BryanSLam/discord-bot"
+	"github.com/BryanSLam/discord-bot/botcommands/earnings_reporter"
+	dg "github.com/bwmarrin/discordgo"
+	"github.com/robfig/cron/v3"
 )
+
+func init() {
+	pst, _ := time.LoadLocation("America/Los_Angeles")
+	cronner := cron.New(cron.WithLocation(pst))
+	cronner.Start()
+	// Run once at 6:00 AM from Monday
+	cronner.AddFunc("00 06 * * MON", pinEarningsReports)
+}
 
 func main() {
 	maintainers := strings.Split(os.Getenv("MAINTAINERS"), ",")
 	botLogChannelID := os.Getenv("BOT_LOG_CHANNEL_ID")
+	botStockChannelID := os.Getenv("BOT_STOCK_CHANNEL_ID")
 
 	// Run the program with `go run main.go -t <token>`
 	// flag.Parse() will assign to token var
@@ -55,6 +70,7 @@ func main() {
 		alpacaKey,
 		dbot.WithMaintainers(maintainers),
 		dbot.WithBotLogChannelID(botLogChannelID),
+		dbot.WithBotStockChannelID(botStockChannelID),
 	)
 	if err != nil {
 		log.Fatalln("error creating Discord session,", err)
@@ -75,4 +91,39 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	bot.Close()
+}
+
+// Pins the upcoming earning reports for the week.
+func pinEarningsReports() {
+	botStockChannelID := os.Getenv("BOT_STOCK_CHANNEL_ID")
+	botToken := os.Getenv("BOT_TOKEN")
+	dgSession, _ := dg.New("Bot " + botToken)
+	dgSession.Open()
+	defer dgSession.Close()
+
+	ctx := context.Background()
+	dw := dbot.NewDiscordWriter(dgSession, nil, botStockChannelID)
+	buf := bytes.NewBuffer([]byte(""))
+
+	reporter, _ := earningsreporter.New()
+	err := reporter.Execute(ctx, buf)
+	if err != nil {
+		log.Println(err)
+		dw.Write([]byte("Failed to fetch weekly earnings reports"))
+		return
+	}
+
+	msg, err := dw.ChannelMessageSend(buf.String())
+	if err != nil {
+		log.Println(err)
+		dw.Write([]byte("Failed to send weekly earnings reports to channel"))
+		return
+	}
+
+	err = dw.Pin(msg.ID)
+	if err != nil {
+		log.Println(err)
+		dw.Write([]byte("Failed to pin weekly earnings reports to channel"))
+		return
+	}
 }
