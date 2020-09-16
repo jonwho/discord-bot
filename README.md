@@ -14,7 +14,6 @@
 * View secrets with `kubectl get secret <uri> -o jsonpath='{.data}'`
 
 ## Docker Hub
-* Build the binary first `make build-discord-bot`
 * Build and tag image `docker build -t jonwho/discord-bot:runbot-v{n} -f Dockerfile.runbot .`
 > Where n is the bump number
 * Push the image to Docker Hub `docker push jonwho/discord-bot:runbot-v{n}`
