@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: bot
-        image: jonwho/discord-bot:runbot-v3
+        image: jonwho/discord-bot:runbot-v5
         env:
         - name: BOT_TOKEN
           valueFrom:

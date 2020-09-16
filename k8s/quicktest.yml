@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
   - name: quicktest
-    image: jonwho/discord-bot:runbot-v3
+    image: jonwho/discord-bot:runbot-v5
     #command: ["/bin/sh", "-c", "env"]
     env:
     - name: BOT_TOKEN
