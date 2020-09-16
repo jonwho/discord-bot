@@ -7,6 +7,14 @@ all: build test
 build:
 	$(DC) build
 
+.PHONY: build-discord-bot
+build-discord-bot:
+	go build -o cmd/discord-bot/discord-bot cmd/discord-bot/main.go
+
+.PHONY: build-discord-bot-linux
+build-discord-bot-linux:
+	GOOS=linux GOARCH=amd64 go build -o cmd/discord-bot/discord-bot-linux cmd/discord-bot/main.go
+
 .PHONY: up
 up:
 	$(DC) up

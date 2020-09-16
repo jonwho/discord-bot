@@ -1,0 +1,38 @@
+---
+# required - version of k8s API you want to use
+# apps/v1 is the most common it has the most common k8s objects
+apiVersion: apps/v1
+# required - the kind of object you want to create
+# Pods are good for testing because they just start up and run
+# they do not automatically come with disaster recovery though
+kind: Pod
+# required - data that helps uniquely identify the object
+metadata:
+  name: my-pod-name
+  labels:
+    app: myappname
+# required - what state you desire for the object
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: myappname
+---
+# can declare multiple resources under one yml file
+# just separate each resource with `---`
+apiVersion: apps/v1
+# Deployments are nice because they create and manage Pod resources
+kind: Deployment
+metadata:
+  name: another-name
+  labels:
+    app: findmewiththis
+spec:
+  # replicas is important because it tells the Deployment to reset Pod state to 5 instances
+  # if any Pods ever fail
+  replicas: 5
+  ports:
+  - port: 8080
+  selector:
+    app: findmewiththis

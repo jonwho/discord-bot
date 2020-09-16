@@ -20,6 +20,5 @@ WORKDIR /go/src/discord-bot/
 ENV GO111MODULE=on
 RUN go mod vendor
 
-# Copy all project and build it
-# This layer will be rebuilt when ever a file has changed in the project directory
+# Copy all project
 COPY . /go/src/discord-bot/

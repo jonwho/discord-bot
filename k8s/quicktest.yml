@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: quicktest
+spec:
+  containers:
+  - name: quicktest
+    image: jonwho/discord-bot:runbot-v3
+    #command: ["/bin/sh", "-c", "env"]
+    env:
+    - name: BOT_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: BOT_TOKEN
+    - name: BOT_LOG_CHANNEL_ID
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: BOT_LOG_CHANNEL_ID
+    - name: BOT_STOCK_CHANNEL_ID
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: BOT_STOCK_CHANNEL_ID
+    - name: MAINTAINERS
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: MAINTAINERS
+    - name: IEX_TEST_SECRET_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: IEX_TEST_SECRET_TOKEN
+    - name: IEX_TEST_PUBLISHABLE_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: IEX_TEST_PUBLISHABLE_TOKEN
+    - name: IEX_SECRET_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: IEX_SECRET_TOKEN
+    - name: IEX_PUBLISHABLE_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: IEX_PUBLISHABLE_TOKEN
+    - name: ALPACA_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: ALPACA_KEY_ID
+    - name: ALPACA_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: botsecrets
+          key: ALPACA_SECRET_KEY

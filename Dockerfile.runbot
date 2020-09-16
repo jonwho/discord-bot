@@ -1,0 +1,6 @@
+FROM golang:1.13.12-alpine3.12
+
+WORKDIR /app/discord-bot/
+# N.B. make sure the linux binary is re-built!
+COPY ./cmd/discord-bot/discord-bot-linux /app/discord-bot/discord-bot
+ENTRYPOINT ["./discord-bot"]

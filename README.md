@@ -7,6 +7,18 @@
 * IEX Cloud account
 * Alpaca account
 
+## Kubernetes Secrets
+* Create secrets with `kubectl create secrets generic <uri>`
+> Create from file is easier `kubectl create secrets generic <uri> --from-file=.env`
+* Edit secrets with `kubectl edit secrets <uri>`
+* View secrets with `kubectl get secret <uri> -o jsonpath='{.data}'`
+
+## Docker Hub
+* Build the binary first `make build-discord-bot`
+* Build and tag image `docker build -t jonwho/discord-bot:runbot-v{n} -f Dockerfile.runbot .`
+> Where n is the bump number
+* Push the image to Docker Hub `docker push jonwho/discord-bot:runbot-v{n}`
+
 ### Method 1
   * Download from here: https://golang.org/dl/
   * Update Go using instructions here: https://gist.github.com/nikhita/432436d570b89cab172dcf2894465753
