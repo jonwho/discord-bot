@@ -9,7 +9,7 @@
 
 ## Kubernetes Secrets
 * Create secrets with `kubectl create secrets generic <uri>`
-> Create from file is easier `kubectl create secrets generic <uri> --from-file=.env`
+> Create from file is easier `kubectl create secret generic botsecrets --from-env-file=.env`
 * Edit secrets with `kubectl edit secrets <uri>`
 * View secrets with `kubectl get secret <uri> -o jsonpath='{.data}'`
 
