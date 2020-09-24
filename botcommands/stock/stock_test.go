@@ -20,7 +20,7 @@ func TestStockExecute(t *testing.T) {
 	// NIT: copy minimum .env file to project root instead of relative pathing
 	err := godotenv.Load("../../.env")
 	if err != nil {
-		log.Fatalln("Error loading .env -- check if file exists or is valid")
+		log.Println("Error loading .env -- check if file exists or is valid. Tests will fail unless you have all available ENV vars")
 	}
 	iexToken := os.Getenv("IEX_SECRET_TOKEN")
 	alpacaID := os.Getenv("ALPACA_KEY_ID")
