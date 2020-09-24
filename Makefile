@@ -15,6 +15,10 @@ build-discord-bot:
 build-discord-bot-linux:
 	GOOS=linux GOARCH=amd64 go build -o cmd/discord-bot/discord-bot-linux cmd/discord-bot/main.go
 
+.PHONY: run-discord-bot
+run-discord-bot:
+	./cmd/discord-bot/discord-bot
+
 .PHONY: up
 up:
 	$(DC) up
