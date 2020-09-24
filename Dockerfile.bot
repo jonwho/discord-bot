@@ -1,5 +1,4 @@
-# Use this Dockerfile to setup the development environment for bot
-FROM golang:1.13.12-alpine3.12 AS dev
+FROM golang:1.13.12-alpine3.12
 
 # Install bash shell
 RUN apk update
@@ -13,7 +12,6 @@ RUN apk add build-base
 RUN apk add --no-cache git
 
 # go.mod and go.sum lists project dependencies
-# These layers will only be re-built when Gopkg files are updated
 COPY go.mod go.sum /go/src/discord-bot/
 WORKDIR /go/src/discord-bot/
 # Install library dependencies
