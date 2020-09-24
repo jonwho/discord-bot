@@ -31,9 +31,13 @@ down:
 restart:
 	$(DC) restart
 
+.PHONY: test-in-docker
+test-in-docker:
+	$(DC) run bot go test ./...
+
 .PHONY: test
 test:
-	$(DC) run bot go test ./...
+	go test ./...
 
 .PHONY: bash
 bash:

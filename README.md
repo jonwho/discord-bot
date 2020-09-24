@@ -27,9 +27,15 @@
 * View secrets with `kubectl get secret <uri> -o jsonpath='{.data}'`
 
 ## Run tests
-Assuming you have filled in the `.env` file you can now run tests with:
+### Run without docker
+Assuming you have exported ENV vars to your shell from .env you can now run tests with:
 ```
 make test
+```
+### Run with docker compose
+Assuming you have filled in the `.env` file you can now run tests with:
+```
+make test-in-docker
 ```
 
 ## Get it running one of three ways
