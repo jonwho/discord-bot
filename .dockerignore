@@ -1,0 +1,4 @@
+vendor/
+ytdl_data/
+.github/
+redis_data/
