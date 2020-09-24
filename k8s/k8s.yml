@@ -4,9 +4,6 @@ kind: Deployment
 metadata:
   name: discordbot
 spec:
-  # N.B.: 2 or more replicas is cool but bot responds twice now
-  # TODO: add a loadbalancer so that only one bot responds
-  # TODO: create a service to stand in front of the pods
   replicas: 1
   selector:
     matchLabels:
