@@ -33,4 +33,4 @@ jobs:
         IEX_TEST_PUBLISHABLE_TOKEN: ${{ secrets.IEX_TEST_PUBLISHABLE_TOKEN }}
         IEX_SECRET_TOKEN: ${{ secrets.IEX_SECRET_TOKEN }}
         IEX_PUBLISHABLE_TOKEN: ${{ secrets.IEX_PUBLISHABLE_TOKEN }}
-      run: cd cmd && go test
+      run: make test
